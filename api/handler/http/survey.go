@@ -64,3 +64,27 @@ func UpdateSurvey(svc *service.SurveyService) fiber.Handler {
 		return c.JSON(responsBody)
 	}
 }
+
+func CancelSurvey(svc *service.SurveyService) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var param = c.Query("uuid")
+		uuid := uuid.MustParse(param)
+		err := svc.CancelSurvey(c.Context(), uuid)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		}
+		return c.JSON("successful")
+	}
+}
+
+func DeleteSurvey(svc *service.SurveyService) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var param = c.Query("uuid")
+		uuid := uuid.MustParse(param)
+		err := svc.DeleteSurvey(c.Context(), uuid)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		}
+		return c.JSON("successful")
+	}
+}

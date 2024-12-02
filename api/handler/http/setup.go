@@ -37,5 +37,7 @@ func Run(appContainer app.App, config config.Config) error {
 	surveyApi.Post("", CreateSurvey(surveyService))
 	surveyApi.Get(":uuid", GetSurvey(surveyService))
 	surveyApi.Put(":uuid", UpdateSurvey(surveyService))
+	surveyApi.Post("cancel/:uuid", CancelSurvey(surveyService))
+	surveyApi.Delete(":uuid", DeleteSurvey(surveyService))
 	return app.Listen(fmt.Sprintf("%v:%d",config.Server.IPAddress, config.Server.HttpPort))
 }

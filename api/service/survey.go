@@ -31,3 +31,11 @@ func (s *SurveyService) UpdateSurvey(ctx context.Context, survey *domain.Survey)
 	//validation
 	return s.srv.UpdateSurvey(ctx, *survey)
 }
+
+func (s *SurveyService) CancelSurvey(ctx context.Context, uuid uuid.UUID) error {
+	return s.srv.CancelSurvey(ctx, uuid)
+}
+
+func (s *SurveyService) DeleteSurvey(ctx context.Context, uuid uuid.UUID) error {
+	return s.srv.DeleteSurvey(ctx, uuid)
+}
