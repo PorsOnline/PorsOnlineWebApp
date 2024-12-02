@@ -25,8 +25,8 @@ func main() {
 		log.Fatal("can not initialize logger")
 	}
 	logger.Info("Starting the program", nil)
-  appContainer := app.NewMustApp(c)
-	err := http.Run(appContainer, c)
+  	appContainer := app.NewMustApp(c)
+	err = http.Run(appContainer, c)
 	if err != nil {
 		log.Fatal("can not start the programm")
 	}
