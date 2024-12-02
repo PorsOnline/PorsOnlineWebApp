@@ -7,6 +7,11 @@ import (
 	"github.com/porseOnline/pkg/adapters/storage"
 	"github.com/porseOnline/pkg/postgres"
 
+	notifPort "PorsOnlineWebApp/internal/notification/port"
+
+	"PorsOnlineWebApp/internal/notification"
+
+
 	"gorm.io/gorm"
 )
 
@@ -20,9 +25,14 @@ func (a *app) UserService() userPort.Service {
 	return a.userService
 }
 
+func (a *app) NotifService() notifPort.Service {
+	return a.notifServer
+}
+
 func (a *app) Config() config.Config {
 	return a.cfg
 }
+
 
 func (a *app) setDB() error {
 	db, err := postgres.NewPsqlGormConnection(postgres.DBConnOptions{
@@ -42,16 +52,23 @@ func (a *app) setDB() error {
 	return nil
 }
 
+
+
 func NewApp(cfg config.Config) (App, error) {
 	a := &app{
 		cfg: cfg,
 	}
+
 
 	if err := a.setDB(); err != nil {
 		return nil, err
 	}
 
 	a.userService = user.NewService(storage.NewUserRepo(a.db))
+
+
+	a.notifServer = notification.NewService(storage.NewNotifRepo(a.db))
+
 
 	return a, nil
 }
