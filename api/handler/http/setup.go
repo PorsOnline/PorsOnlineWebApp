@@ -1,6 +1,8 @@
 package http
 
 import (
+	"PorsOnlineWebApp/api/service"
+	"PorsOnlineWebApp/app"
 	"PorsOnlineWebApp/config"
 	"fmt"
 	"time"
@@ -10,7 +12,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 )
 
-func Run(config config.Config) error {
+func Run(appContainer app.App, config config.Config) error {
 	app := fiber.New(fiber.Config{
 		AppName:           "Survey v0.0.1",
 		EnablePrintRoutes: true,
@@ -30,5 +32,8 @@ func Run(config config.Config) error {
 			return c.SendString("STOP` SENDING TOO MUCH REQUESTS")
 		},
 	}))
-	return app.Listen(fmt.Sprintf(":%d", config.Server.HttpPort))
+	surveyService := service.NewSurveyService(appContainer.SurveyService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
+	surveyApi := app.Group("api/v1/survey")
+	surveyApi.Post("", CreateSurvey(surveyService))
+	return app.Listen(fmt.Sprintf("%v:%d",config.Server.IPAddress, config.Server.HttpPort))
 }

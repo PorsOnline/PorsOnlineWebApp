@@ -21,6 +21,7 @@ type LoggerConfig struct {
 }
 
 type ServerConfig struct {
+	IPAddress			string `json:"ip_address" yaml:"ip_address"`
 	HttpPort            uint   `json:"http_port"  yaml:"http_port"`
 	Secret              string `json:"secret"  yaml:"secret"`
 	AuthExpMinute       uint   `json:"auth_exp_minute"  yaml:"auth_exp_minute"`
