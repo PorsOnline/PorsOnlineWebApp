@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"PorsOnlineWebApp/api/handler/http"
+	"PorsOnlineWebApp/pkg/logger"
 )
 
 func main() {
@@ -17,8 +18,13 @@ func main() {
 		*configPath = v
 	}
 	c := config.MustReadConfig(*configPath)
-	err := http.Run(c)
-	if err!=nil{
+	err := logger.InitLogger(c)
+	if err != nil {
+		log.Fatal("can not initialize logger")
+	}
+	logger.Info("Starting the program", nil)
+	err = http.Run(c)
+	if err != nil {
 		log.Fatal("can not start the programm")
 	}
 }

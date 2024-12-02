@@ -1,15 +1,16 @@
-// Package logger provides a flexible logging system with multiple outputs and log levels
 package logger
 
 import (
+	"PorsOnlineWebApp/config"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"sync"
 	"time"
 )
 
-// LogLevel represents the severity of the log message
 type LogLevel int
 
 const (
@@ -20,161 +21,121 @@ const (
 	FATAL
 )
 
-// String returns the string representation of LogLevel
 func (l LogLevel) String() string {
 	return [...]string{"DEBUG", "INFO", "WARN", "ERROR", "FATAL"}[l]
 }
 
-// LogWriter interface for different output destinations
-type LogWriter interface {
-	Write(entry *LogEntry) error
+type LogOutput interface {
+	Write(entry LogEntry) error
 	Close() error
 }
 
-// LogEntry represents a single log message
 type LogEntry struct {
-	Timestamp time.Time              `json:"timestamp"`
-	Level     LogLevel               `json:"level"`
-	Message   string                 `json:"message"`
-	Fields    map[string]interface{} `json:"fields,omitempty"`
+	Timestamp time.Time `json:"timestamp"`
+	Level     LogLevel  `json:"level"`
+	Message   string    `json:"message"`
+	Fields    Fields    `json:"fields,omitempty"`
 }
 
-// Logger is the main logger struct
+type Fields map[string]interface{}
+
 type Logger struct {
-	writers []LogWriter
-	level   LogLevel
-	mutex   sync.Mutex
+	output   LogOutput
+	minLevel LogLevel
+	mu       sync.Mutex
 }
 
-// FileWriter implements LogWriter for file output
-type FileWriter struct {
+type ConsoleOutput struct {
+	writer io.Writer
+}
+
+type FileOutput struct {
 	file *os.File
 }
 
-// StdoutWriter implements LogWriter for console output
-type StdoutWriter struct{}
-
-// ElasticsearchWriter implements LogWriter for Elasticsearch output
-type ElasticsearchWriter struct {
+type ElasticsearchOutput struct {
 	url      string
 	index    string
 	username string
 	password string
 }
 
-// NewLogger creates a new Logger instance
-func NewLogger(level LogLevel) *Logger {
-	return &Logger{
-		level:   level,
-		writers: make([]LogWriter, 0),
-	}
-}
+var defaultLogger *Logger
+var once sync.Once
 
-// AddWriter adds a new output destination
-func (l *Logger) AddWriter(writer LogWriter) {
-	l.mutex.Lock()
-	defer l.mutex.Unlock()
-	l.writers = append(l.writers, writer)
-}
-
-// log handles the actual logging
-func (l *Logger) log(level LogLevel, message string, fields map[string]interface{}) {
-	if level < l.level {
-		return
-	}
-
-	entry := &LogEntry{
-		Timestamp: time.Now(),
-		Level:     level,
-		Message:   message,
-		Fields:    fields,
-	}
-
-	l.mutex.Lock()
-	defer l.mutex.Unlock()
-
-	for _, writer := range l.writers {
-		if err := writer.Write(entry); err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to write log entry: %v\n", err)
+func InitLogger(c config.Config) error {
+	var err error
+	once.Do(func() {
+		_logLevel, err := parseLogLevel(c.Logger.Level)
+		if err != nil {
+			log.Fatal("wrong log level")
 		}
-	}
 
-	if level == FATAL {
-		for _, writer := range l.writers {
-			writer.Close()
+		var output LogOutput
+		switch c.Logger.Output {
+		case "console":
+			output = NewConsoleOutput(os.Stdout)
+		case "file":
+			output, err = NewFileOutput(c.Logger.Path)
+		case "elasticsearch":
+			output = NewElasticsearchOutput(c.Elasticsearch.Host, c.Elasticsearch.Index,
+				c.Elasticsearch.Username, c.Elasticsearch.Password)
 		}
-		os.Exit(1)
-	}
-}
+		if err != nil {
+			return
+		}
+		if output != nil {
+			defaultLogger = &Logger{
+				minLevel: _logLevel,
+				output:   output,
+			}
 
-// Debug logs a debug message
-func (l *Logger) Debug(message string, fields map[string]interface{}) {
-	l.log(DEBUG, message, fields)
-}
+		}
 
-// Info logs an info message
-func (l *Logger) Info(message string, fields map[string]interface{}) {
-	l.log(INFO, message, fields)
-}
-
-// Warn logs a warning message
-func (l *Logger) Warn(message string, fields map[string]interface{}) {
-	l.log(WARN, message, fields)
-}
-
-// Error logs an error message
-func (l *Logger) Error(message string, fields map[string]interface{}) {
-	l.log(ERROR, message, fields)
-}
-
-// Fatal logs a fatal message and exits the program
-func (l *Logger) Fatal(message string, fields map[string]interface{}) {
-	l.log(FATAL, message, fields)
-}
-
-// NewFileWriter creates a new file writer
-func NewFileWriter(filepath string) (*FileWriter, error) {
-	file, err := os.OpenFile(filepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return nil, err
-	}
-	return &FileWriter{file: file}, nil
-}
-
-func (fw *FileWriter) Write(entry *LogEntry) error {
-	data, err := json.Marshal(entry)
-	if err != nil {
-		return err
-	}
-	_, err = fw.file.Write(append(data, '\n'))
+	})
 	return err
 }
 
-func (fw *FileWriter) Close() error {
-	return fw.file.Close()
+func NewConsoleOutput(w io.Writer) LogOutput {
+	return &ConsoleOutput{writer: w}
 }
 
-// NewStdoutWriter creates a new stdout writer
-func NewStdoutWriter() *StdoutWriter {
-	return &StdoutWriter{}
-}
-
-func (sw *StdoutWriter) Write(entry *LogEntry) error {
-	data, err := json.Marshal(entry)
-	if err != nil {
-		return err
-	}
-	_, err = fmt.Fprintln(os.Stdout, string(data))
+func (c *ConsoleOutput) Write(entry LogEntry) error {
+	output := fmt.Sprintf("[%s] %s: %s\n",
+		entry.Timestamp.Format(time.RFC3339),
+		entry.Level.String(),
+		entry.Message)
+	_, err := fmt.Fprint(c.writer, output)
 	return err
 }
 
-func (sw *StdoutWriter) Close() error {
+func (c *ConsoleOutput) Close() error {
 	return nil
 }
 
-// NewElasticsearchWriter creates a new Elasticsearch writer
-func NewElasticsearchWriter(url, index, username, password string) *ElasticsearchWriter {
-	return &ElasticsearchWriter{
+func NewFileOutput(path string) (LogOutput, error) {
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return nil, err
+	}
+	return &FileOutput{file: file}, nil
+}
+
+func (f *FileOutput) Write(entry LogEntry) error {
+	data, err := json.Marshal(entry)
+	if err != nil {
+		return err
+	}
+	_, err = f.file.Write(append(data, '\n'))
+	return err
+}
+
+func (f *FileOutput) Close() error {
+	return f.file.Close()
+}
+
+func NewElasticsearchOutput(url, index, username, password string) LogOutput {
+	return &ElasticsearchOutput{
 		url:      url,
 		index:    index,
 		username: username,
@@ -182,13 +143,66 @@ func NewElasticsearchWriter(url, index, username, password string) *Elasticsearc
 	}
 }
 
-func (ew *ElasticsearchWriter) Write(entry *LogEntry) error {
-	// Implement Elasticsearch writing logic here
-	// This is a placeholder - you'll need to implement the actual ES client logic
+func (e *ElasticsearchOutput) Write(entry LogEntry) error {
+	// Implement ES client logic here
+	// Use elastic client to send log entry to ES
 	return nil
 }
 
-func (ew *ElasticsearchWriter) Close() error {
-	// Implement cleanup logic if needed
+func (e *ElasticsearchOutput) Close() error {
+	// Implement ES client cleanup
 	return nil
+}
+
+func Debug(msg string, fields Fields) {
+	defaultLogger.log(DEBUG, msg, fields)
+}
+
+func Info(msg string, fields Fields) {
+	defaultLogger.log(INFO, msg, fields)
+}
+
+func Warn(msg string, fields Fields) {
+	defaultLogger.log(WARN, msg, fields)
+}
+
+func Error(msg string, fields Fields) {
+	defaultLogger.log(ERROR, msg, fields)
+}
+
+func Fatal(msg string, fields Fields) {
+	defaultLogger.log(FATAL, msg, fields)
+	os.Exit(1)
+}
+
+func (l *Logger) log(level LogLevel, msg string, fields Fields) {
+	if level < l.minLevel {
+		return
+	}
+
+	entry := LogEntry{
+		Timestamp: time.Now(),
+		Level:     level,
+		Message:   msg,
+		Fields:    fields,
+	}
+
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.output.Write(entry)
+}
+
+func parseLogLevel(level string) (LogLevel, error) {
+	switch level {
+	case "DEBUG":
+		return DEBUG, nil
+	case "INFO":
+		return INFO, nil
+	case "WARN":
+		return WARN, nil
+	case "ERROR":
+		return ERROR, nil
+	default:
+		return DEBUG, fmt.Errorf("invalid log level: %s", level)
+	}
 }
