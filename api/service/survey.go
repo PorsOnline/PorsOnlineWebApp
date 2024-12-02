@@ -4,6 +4,8 @@ import (
 	"PorsOnlineWebApp/internal/survey/domain"
 	surveyPort "PorsOnlineWebApp/internal/survey/port"
 	"context"
+
+	"github.com/google/uuid"
 )
 
 type SurveyService struct {
@@ -19,4 +21,8 @@ func NewSurveyService(srv surveyPort.Service, authSecret string, expMin, refresh
 func (s *SurveyService) CreateSurvey(ctx context.Context, survey *domain.Survey) (*domain.Survey, error) {
 	//validation
 	return s.srv.CreateSurvey(ctx, *survey)
+}
+
+func (s *SurveyService) GetSurvey(ctx context.Context, uuid uuid.UUID) (*domain.Survey, error) {
+	return s.srv.GetSurvey(ctx, uuid)
 }

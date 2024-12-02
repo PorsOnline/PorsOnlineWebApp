@@ -35,5 +35,6 @@ func Run(appContainer app.App, config config.Config) error {
 	surveyService := service.NewSurveyService(appContainer.SurveyService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	surveyApi := app.Group("api/v1/survey")
 	surveyApi.Post("", CreateSurvey(surveyService))
+	surveyApi.Get(":uuid", GetSurvey(surveyService))
 	return app.Listen(fmt.Sprintf("%v:%d",config.Server.IPAddress, config.Server.HttpPort))
 }

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 
@@ -28,5 +29,17 @@ func CreateSurvey(svc *service.SurveyService) fiber.Handler {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
 		return c.JSON(responsBody)
+	}
+}
+
+func GetSurvey(svc *service.SurveyService) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var param = c.Query("uuid")
+		uuid := uuid.MustParse(param)
+		resp, err := svc.GetSurvey(c.Context(), uuid)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		}
+		return c.JSON(resp)
 	}
 }
