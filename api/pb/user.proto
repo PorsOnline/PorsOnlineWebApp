@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option go_package = "github.com/porseOnline/api/pb";
+
+
+message UserSignUpFirstRequest {
+    string firstName = 1 [json_name = "firstName"];
+    string lastName = 2 [json_name = "lastName"];
+    string phone = 3 [json_name = "phone"];
+}
+message UserSignUpSecondRequest {
+    uint64 userId = 2 [json_name = "userId"];
+    string code = 1 [json_name = "code"];
+}
+
+message UserSignUpSecondResponse {
+    string accessToken = 1 [json_name = "accessToken"];
+    string refreshToken = 2 [json_name = "refreshToken"];
+}
+
+message UserSignUpFirstResponse {
+    uint64 userId = 1 [json_name = "userId"];
+}
+
+message User {
+    uint64 id = 1;
+    string firstName = 2;
+    string lastName = 3;
+    string phone = 4;
+}
