@@ -1,11 +1,16 @@
 package app
 
 import (
-	"PorsOnlineWebApp/config"
-	notifPort "PorsOnlineWebApp/internal/notification/port"
+
+	"github.com/porseOnline/config"
+	userPort "github.com/porseOnline/internal/user/port"
+  notifPort "PorsOnlineWebApp/internal/notification/port"
 )
 
 type App interface {
-	NotifService() notifPort.Service
-	Config() config.Config
-}
+	UserService() userPort.Service
+  NotifService() notifPort.Service
+  Config() config.Config
+	
+)
+

@@ -1,21 +1,25 @@
 package types
 
 import (
-	"time"
+
+	"gorm.io/gorm"
 )
 
 type User struct {
-	ID                string
-	FirstName         string
-	Lastname          string
+	gorm.Model
+	FirstName    string
+	LastName     string
+	Phone        string
+	Email        string
+	PasswordHash string
 	NationalCode      string
-	Email             string
-	Password          string
+
 	BirthDate         time.Time
 	City              string
-	Sex               string
+	Gender               string
 	SurveyLimitNumber int
 	Create_at         time.Time
 	Update_at         time.Time
 	Balane            int
+
 }

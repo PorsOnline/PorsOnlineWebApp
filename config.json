@@ -1,0 +1,16 @@
+{
+    "db": {
+        "host": "localhost",
+        "port": 5432,
+        "database": "PorsOnlineDB",
+        "user": "admin",
+        "password": "12345",
+        "schema":"public"
+    },
+    "server":{
+        "httpPort":8080,
+        "secret":"123456@#@$",
+        "authExpMin":30,
+        "authExpRefreshMin":180
+    }
+}
