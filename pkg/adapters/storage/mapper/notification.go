@@ -1,9 +1,10 @@
 package mapper
 
 import (
-	"PorsOnlineWebApp/internal/notification/domain"
-	"PorsOnlineWebApp/pkg/adapters/storage/types"
 	"time"
+
+	"github.com/porseOnline/internal/notification/domain"
+	"github.com/porseOnline/pkg/adapters/storage/types"
 )
 
 func NotifDomain2Storage(notifDomain domain.Notification) *types.Notification {
@@ -24,7 +25,7 @@ func NotifStorage2Domain(notifStorage []types.Notification) []*domain.Notificati
 			ID:        notif.ID,
 			UserID:    notif.UserID,
 			Message:   notif.Message,
-			Read:      notif.Read,    
+			Read:      notif.Read,
 			Create_at: notif.Create_at,
 		}
 	}

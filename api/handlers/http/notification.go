@@ -1,8 +1,8 @@
 package http
 
 import (
-	"PorsOnlineWebApp/api/service"
-	"PorsOnlineWebApp/pkg/adapters/storage/types"
+	"github.com/porseOnline/api/service"
+	"github.com/porseOnline/pkg/adapters/storage/types"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"

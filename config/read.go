@@ -1,11 +1,9 @@
 package config
 
 import (
-
 	"encoding/json"
-	"os"
 	"log"
-	"gopkg.in/yaml.v3"
+	"os"
 )
 
 func ReadConfig(configPath string) (Config, error) {
@@ -21,8 +19,10 @@ func ReadConfig(configPath string) (Config, error) {
 func MustReadConfig(configPath string) Config {
 	c, err := ReadConfig(configPath)
 	if err != nil {
-		panic(err)
-
+		log.Fatal("Can not read config file.", err.Error())
+	}
+	return c
+}
 
 // func readConfig(configPath string) (Config, error) {
 // 	var c Config
@@ -36,5 +36,3 @@ func MustReadConfig(configPath string) Config {
 // 	}
 // 	return c, nil
 // }
-
-

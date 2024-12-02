@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"PorsOnlineWebApp/config"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,6 +8,8 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"github.com/porseOnline/config"
 )
 
 type LogLevel int

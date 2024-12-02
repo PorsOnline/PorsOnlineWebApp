@@ -1,12 +1,13 @@
 package storage
 
 import (
-	"PorsOnlineWebApp/internal/notification/domain"
-	notifPort "PorsOnlineWebApp/internal/notification/port"
-	"PorsOnlineWebApp/pkg/adapters/storage/mapper"
-	"PorsOnlineWebApp/pkg/adapters/storage/types"
 	"context"
 	"errors"
+
+	"github.com/porseOnline/internal/notification/domain"
+	notifPort "github.com/porseOnline/internal/notification/port"
+	"github.com/porseOnline/pkg/adapters/storage/mapper"
+	"github.com/porseOnline/pkg/adapters/storage/types"
 
 	"gorm.io/gorm"
 )

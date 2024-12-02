@@ -1,11 +1,12 @@
 package service
 
 import (
-	"PorsOnlineWebApp/internal/notification/domain"
-	notificatinPort "PorsOnlineWebApp/internal/notification/port"
-	"PorsOnlineWebApp/pkg/adapters/storage/types"
 	"context"
 	"time"
+
+	"github.com/porseOnline/internal/notification/domain"
+	notificatinPort "github.com/porseOnline/internal/notification/port"
+	"github.com/porseOnline/pkg/adapters/storage/types"
 
 	"github.com/gofiber/fiber/v2/log"
 )

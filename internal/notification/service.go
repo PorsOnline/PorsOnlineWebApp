@@ -1,9 +1,10 @@
 package notification
 
 import (
-	"PorsOnlineWebApp/internal/notification/domain"
-	"PorsOnlineWebApp/internal/notification/port"
 	"context"
+
+	"github.com/porseOnline/internal/notification/domain"
+	"github.com/porseOnline/internal/notification/port"
 
 	"github.com/gofiber/fiber/v2/log"
 )
