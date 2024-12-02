@@ -43,3 +43,24 @@ func GetSurvey(svc *service.SurveyService) fiber.Handler {
 		return c.JSON(resp)
 	}
 }
+
+func UpdateSurvey(svc *service.SurveyService) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var param = c.Query("uuid")
+		uuid := uuid.MustParse(param)
+		var req domain.Survey
+		if err := c.BodyParser(&req); err != nil {
+			return fiber.ErrBadRequest
+		}
+		req.UUID = uuid
+		response, err := svc.UpdateSurvey(c.UserContext(), &req)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		}
+		responsBody, err := json.Marshal(response)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		}
+		return c.JSON(responsBody)
+	}
+}
