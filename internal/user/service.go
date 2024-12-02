@@ -43,7 +43,6 @@ func (s *service) CreateUser(ctx context.Context, user domain.User) (domain.User
 func (s *service) GetUserByID(ctx context.Context, userID domain.UserID) (*domain.User, error) {
 	user, err := s.repo.GetByID(ctx, userID)
 	if err != nil {
-		print("errrrrror")
 		return nil, err
 	}
 
