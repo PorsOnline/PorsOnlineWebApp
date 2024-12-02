@@ -1,6 +1,8 @@
 package http
 
 import (
+	"PorsOnlineWebApp/api/service"
+	"PorsOnlineWebApp/app"
 	"PorsOnlineWebApp/config"
 	"fmt"
 	"time"
@@ -10,7 +12,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 )
 
-func Run(config config.Config) error {
+func Run(appContainer app.App, config config.Config) error {
 	app := fiber.New(fiber.Config{
 		AppName:           "Survey v0.0.1",
 		EnablePrintRoutes: true,
@@ -30,5 +32,10 @@ func Run(config config.Config) error {
 			return c.SendString("STOP` SENDING TOO MUCH REQUESTS")
 		},
 	}))
+
+	notifService := service.NewNotificationSerivce(appContainer.NotifService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
+	api := app.Group("/api/v1")
+	api.Post("/send_message", SendMessage(notifService))
+
 	return app.Listen(fmt.Sprintf(":%d", config.Server.HttpPort))
 }

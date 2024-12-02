@@ -1,6 +1,7 @@
 package main
 
 import (
+	"PorsOnlineWebApp/app"
 	"PorsOnlineWebApp/config"
 	"flag"
 	"log"
@@ -18,12 +19,14 @@ func main() {
 		*configPath = v
 	}
 	c := config.MustReadConfig(*configPath)
+  
 	err := logger.InitLogger(c)
 	if err != nil {
 		log.Fatal("can not initialize logger")
 	}
 	logger.Info("Starting the program", nil)
-	err = http.Run(c)
+  appContainer := app.NewMustApp(c)
+	err := http.Run(appContainer, c)
 	if err != nil {
 		log.Fatal("can not start the programm")
 	}
