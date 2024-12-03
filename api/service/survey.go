@@ -1,8 +1,8 @@
 package service
 
 import (
-	"PorsOnlineWebApp/internal/survey/domain"
-	surveyPort "PorsOnlineWebApp/internal/survey/port"
+	"github.com/porseOnline/internal/survey/domain"
+	surveyPort "github.com/porseOnline/internal/survey/port"
 	"context"
 
 	"github.com/google/uuid"
@@ -14,7 +14,7 @@ type SurveyService struct {
 	expMin, refreshExpMin uint
 }
 
-func NewSurveyService(srv surveyPort.Service, authSecret string, expMin, refreshExpMin uint) *SurveyService {
+func NewService(srv surveyPort.Service, authSecret string, expMin, refreshExpMin uint) *SurveyService {
 	return &SurveyService{srv: srv, authSecret: authSecret, expMin: expMin, refreshExpMin: refreshExpMin}
 }
 

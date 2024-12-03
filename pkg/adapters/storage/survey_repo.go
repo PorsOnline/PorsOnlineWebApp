@@ -1,9 +1,10 @@
 package storage
 
 import (
-	surveyPort "PorsOnlineWebApp/internal/survey/port"
-	"PorsOnlineWebApp/pkg/adapters/storage/types"
 	"context"
+
+	surveyPort "github.com/porseOnline/internal/survey/port"
+	"github.com/porseOnline/pkg/adapters/storage/types"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"

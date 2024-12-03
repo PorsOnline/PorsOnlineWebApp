@@ -1,8 +1,8 @@
 package survey
 
 import (
-	"PorsOnlineWebApp/internal/survey/domain"
-	surveyPort "PorsOnlineWebApp/internal/survey/port"
+	"github.com/porseOnline/internal/survey/domain"
+	surveyPort "github.com/porseOnline/internal/survey/port"
 	"context"
 	"errors"
 
@@ -14,7 +14,7 @@ type service struct {
 	repo surveyPort.Repo
 }
 
-func NewSurveyService(repo surveyPort.Repo) surveyPort.Service {
+func NewService(repo surveyPort.Repo) surveyPort.Service {
 	return &service{repo: repo}
 }
 

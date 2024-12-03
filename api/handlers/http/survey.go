@@ -1,8 +1,8 @@
 package http
 
 import (
-	"PorsOnlineWebApp/api/service"
-	"PorsOnlineWebApp/internal/survey/domain"
+	"github.com/porseOnline/api/service"
+	"github.com/porseOnline/internal/survey/domain"
 	"encoding/json"
 
 	"github.com/gofiber/fiber/v2"

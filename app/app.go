@@ -1,56 +1,77 @@
 package app
 
 import (
-	"PorsOnlineWebApp/config"
-	surveyPort "PorsOnlineWebApp/internal/survey/port"
-	"PorsOnlineWebApp/pkg/adapters/storage"
-	"PorsOnlineWebApp/internal/survey"
+	surveyPort "github.com/porseOnline/internal/survey/port"
+	"github.com/porseOnline/internal/survey"
+	"github.com/porseOnline/config"
+	"github.com/porseOnline/internal/user"
+	userPort "github.com/porseOnline/internal/user/port"
+	"github.com/porseOnline/pkg/adapters/storage"
+	"github.com/porseOnline/pkg/postgres"
+
+	notifPort "github.com/porseOnline/internal/notification/port"
+
+	"github.com/porseOnline/internal/notification"
 
 	"gorm.io/gorm"
 )
 
 type app struct {
-	db          *gorm.DB
-	cfg         config.Config
-	surveyServer surveyPort.Service
+	db           *gorm.DB
+	cfg          config.Config
+	userService  userPort.Service
+	notifService notifPort.Service
+	surveyService surveyPort.Service
+}
+
+func (a *app) UserService() userPort.Service {
+	return a.userService
+}
+
+func (a *app) NotifService() notifPort.Service {
+	return a.notifService
 }
 
 func (a *app) SurveyService() surveyPort.Service {
-	return a.surveyServer
+	return a.surveyService
 }
 
 func (a *app) Config() config.Config {
 	return a.cfg
 }
 
-// func (a *app) setDB() error {
-// 	db, err := postgres.NewPsqlGormConnection(postgres.DBConnOptions{
-// 		User:   a.cfg.DB.User,
-// 		Pass:   a.cfg.DB.Password,
-// 		Host:   a.cfg.DB.Host,
-// 		Port:   a.cfg.DB.Port,
-// 		DBName: a.cfg.DB.Database,
-// 		Schema: a.cfg.DB.Schema,
-// 	})
+func (a *app) setDB() error {
+	db, err := postgres.NewPsqlGormConnection(postgres.DBConnOptions{
+		User:   a.cfg.DB.User,
+		Pass:   a.cfg.DB.Password,
+		Host:   a.cfg.DB.Host,
+		Port:   a.cfg.DB.Port,
+		DBName: a.cfg.DB.Database,
+		Schema: a.cfg.DB.Schema,
+	})
 
-// 	if err != nil {
-// 		return err
-// 	}
+	if err != nil {
+		return err
+	}
 
-// 	a.db = db
-// 	return nil
-// }
+	a.db = db
+	return nil
+}
 
 func NewApp(cfg config.Config) (App, error) {
 	a := &app{
 		cfg: cfg,
 	}
 
-	// if err := a.setDB(); err != nil {
-	// 	return nil, err
-	// }
+	if err := a.setDB(); err != nil {
+		return nil, err
+	}
 
-	a.surveyServer = survey.NewSurveyService(storage.NewSurveyRepo(a.db))
+	a.userService = user.NewService(storage.NewUserRepo(a.db))
+
+	a.notifService = notification.NewService(storage.NewNotifRepo(a.db))
+
+	a.surveyService = survey.NewService(storage.NewSurveyRepo(a.db))
 
 	return a, nil
 }

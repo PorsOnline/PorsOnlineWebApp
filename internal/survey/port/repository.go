@@ -1,7 +1,7 @@
 package port
 
 import (
-	"PorsOnlineWebApp/pkg/adapters/storage/types"
+	"github.com/porseOnline/pkg/adapters/storage/types"
 	"context"
 
 	"github.com/google/uuid"

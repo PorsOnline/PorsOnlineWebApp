@@ -1,11 +1,12 @@
 package http
 
 import (
-	"PorsOnlineWebApp/api/service"
-	"PorsOnlineWebApp/app"
-	"PorsOnlineWebApp/config"
 	"fmt"
 	"time"
+
+	"github.com/porseOnline/api/service"
+	"github.com/porseOnline/app"
+	"github.com/porseOnline/config"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
@@ -32,7 +33,7 @@ func Run(appContainer app.App, config config.Config) error {
 			return c.SendString("STOP` SENDING TOO MUCH REQUESTS")
 		},
 	}))
-	surveyService := service.NewSurveyService(appContainer.SurveyService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
+	surveyService := service.NewService(appContainer.SurveyService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	surveyApi := app.Group("api/v1/survey")
 	surveyApi.Post("", CreateSurvey(surveyService))
 	surveyApi.Get(":uuid", GetSurvey(surveyService))
@@ -40,5 +41,16 @@ func Run(appContainer app.App, config config.Config) error {
 	surveyApi.Post("cancel/:uuid", CancelSurvey(surveyService))
 	surveyApi.Delete(":uuid", DeleteSurvey(surveyService))
 	surveyApi.Get("", GetAllSurveys(surveyService))
-	return app.Listen(fmt.Sprintf("%v:%d",config.Server.IPAddress, config.Server.HttpPort))
+	userService := service.NewUserService(appContainer.UserService(),
+		config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
+
+	api := app.Group("/api/v1")
+	api.Post("/sign-up", SignUp(userService))
+	api.Post("/sign-up-code-verification", SignUpCodeVerification(userService))
+
+	api.Get("/users/:id", GetUserByID(userService))
+	notifService := service.NewNotificationSerivce(appContainer.NotifService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
+	api.Post("/send_message", SendMessage(notifService))
+
+	return app.Listen(fmt.Sprintf(":%d", config.Server.HttpPort))
 }

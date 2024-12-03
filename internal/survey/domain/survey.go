@@ -1,8 +1,9 @@
 package domain
 
 import (
-	"PorsOnlineWebApp/pkg/adapters/storage/types"
 	"time"
+
+	"github.com/porseOnline/pkg/adapters/storage/types"
 
 	"github.com/google/uuid"
 )

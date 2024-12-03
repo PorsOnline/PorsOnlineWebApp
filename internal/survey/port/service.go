@@ -1,7 +1,7 @@
 package port
 
 import (
-	"PorsOnlineWebApp/internal/survey/domain"
+	"github.com/porseOnline/internal/survey/domain"
 	"context"
 
 	"github.com/google/uuid"
