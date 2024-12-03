@@ -28,10 +28,26 @@ func (r *userRepo) Create(ctx context.Context, userDomain domain.User) (domain.U
 
 func (r *userRepo) GetByID(ctx context.Context, userID domain.UserID) (*domain.User, error) {
 	var user types.User
-	err := r.db.Table("users").
-		Where("id = ?", userID).
+	err := r.db.Debug().Table("users").
+		Where("id = ?", userID).WithContext(ctx).
 		First(&user).Error
 
+	if err != nil {
+		return nil, err
+	}
+
+	if user.ID == 0 {
+		return nil, nil
+	}
+
+	return mapper.UserStorage2Domain(user), nil
+}
+func (r *userRepo) GetByEmail(ctx context.Context, email domain.Email) (*domain.User, error) {
+	var user types.User
+	err := r.db.Table("users").
+		Where("email = ?", email).
+		First(&user).Error
+	print(user.PasswordHash)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
