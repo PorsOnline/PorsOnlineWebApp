@@ -13,4 +13,30 @@
         "http_port": 8080,
         "ip_address": "127.0.0.1"
     }
+        "database": "PorsOnlineDB",
+        "s_database": "",
+        "user": "admin",
+        "password": "12345",
+        "schema":"public"
+    },
+    "server":{
+        "httpPort":8080,
+        "secret":"123456@#@$",
+        "authExpMin":30,
+        "authExpRefreshMin":180,
+        "rate_limit_max_attempt": 10,
+        "ratelimit_time_period": 30
+    },
+    "logger": {
+        "level": "INFO",
+        "output": "console",
+        "path": ""
+    },
+  "elasticsearch": {
+    "host": "localhost",
+    "port": "9200",
+    "username": "elastic",
+    "password": "changeme",
+    "index": "posronline"
+  }
 }
