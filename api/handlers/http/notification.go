@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -34,7 +35,6 @@ func SendMessage(srv *service.NotificationService) fiber.Handler {
 func GetUnreadMessages(srv *service.NotificationService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		userID := c.Params("user_id")
-
 		resp, err := srv.GetUnreadMessages(c.UserContext(), userID)
 		if err != nil {
 			return fiber.NewError(fiber.StatusNotFound, err.Error())
