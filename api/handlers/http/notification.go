@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
