@@ -8,6 +8,10 @@ message UserSignUpFirstRequest {
     string lastName = 2 [json_name = "lastName"];
     string phone = 3 [json_name = "phone"];
 }
+message UserSignInRequest {
+    string email = 1 [json_name = "email"];
+    string password = 2 [json_name = "password"];
+}
 message UserSignUpSecondRequest {
     uint64 userId = 2 [json_name = "userId"];
     string code = 1 [json_name = "code"];
@@ -22,9 +26,21 @@ message UserSignUpFirstResponse {
     uint64 userId = 1 [json_name = "userId"];
 }
 
+import "google/protobuf/timestamp.proto";
 message User {
     uint64 id = 1;
     string firstName = 2;
     string lastName = 3;
     string phone = 4;
+    string email = 5;             
+    string passwordHash = 6;     
+    string nationalCode = 7;      
+    google.protobuf.Timestamp birthDate = 8;        
+    string city = 9;           
+    string gender = 10;           
+    int32 survey_limit_number = 11;
+    google.protobuf.Timestamp created_at = 12;
+    google.protobuf.Timestamp deleted_at = 13;
+    google.protobuf.Timestamp updated_at = 14;
+    int32 balance = 15;
 }
