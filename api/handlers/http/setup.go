@@ -43,6 +43,7 @@ func Run(appContainer app.App, config config.Config) error {
 	api.Get("/users/:id", GetUserByID(userService))
 	notifService := service.NewNotificationSerivce(appContainer.NotifService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	api.Post("/send_message", SendMessage(notifService))
+	api.Get("/unread-messages/:user_id", GetUnreadMessages(notifService))
 
 	return app.Listen(fmt.Sprintf(":%d", config.Server.HttpPort))
 }
