@@ -88,3 +88,24 @@ func DeleteSurvey(svc *service.SurveyService) fiber.Handler {
 		return c.JSON("successful")
 	}
 }
+
+type PaginationQuery struct {
+    Page int `query:"page" default:"1" validate:"gt=0"`
+    Size int `query:"size" default:"10" validate:"gt=0"`
+    // SortBy string `query:"sortBy" default:"name" validate:"oneof=id name country"`
+}
+
+func GetAllSurveys(svc *service.SurveyService) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var paginationQuery PaginationQuery
+		err := c.QueryParser(&paginationQuery)
+		if err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
+		resp, err := svc.GetAllSurveys(c.Context(), paginationQuery.Page, paginationQuery.Size)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		}
+		return c.JSON(resp)
+	}
+}

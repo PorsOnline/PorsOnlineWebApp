@@ -39,3 +39,13 @@ func (s *SurveyService) CancelSurvey(ctx context.Context, uuid uuid.UUID) error 
 func (s *SurveyService) DeleteSurvey(ctx context.Context, uuid uuid.UUID) error {
 	return s.srv.DeleteSurvey(ctx, uuid)
 }
+
+func (s *SurveyService) GetAllSurveys(ctx context.Context, page, pageSize int) ([]domain.Survey, error) {
+	if page == 0 {
+		page = 1
+	} 
+	if pageSize == 0 {
+		pageSize = 10
+	}
+	return s.srv.GetAllSurveys(ctx, page, pageSize)
+}
