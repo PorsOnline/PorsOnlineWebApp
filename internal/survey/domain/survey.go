@@ -19,20 +19,32 @@ type Survey struct {
 	AllowsBackNavigation bool
 	MaxAttempts uint
 	DurationMinutes uint
+	MinAge               uint
+	MaxAge               uint
+	Gender               types.GenderEnum
+	TargetCities         []string
 }
 
 func TypeToDomainMapper(survey types.Survey) *Survey {
+	var cities []string
+	for _, city := range survey.TargetCities {
+		cities = append(cities, city.Name)
+	}
 	return &Survey{
-		survey.ID,
-		survey.UUID,
-		survey.Title,
-		survey.StartAt,
-		survey.ExpireAt,
-		survey.IsSequential,
-		survey.IsActive,
-		survey.AllowsBackNavigation,
-		survey.MaxAttempts,
-		survey.DurationMinutes,
+		ID: survey.ID,
+		UUID: survey.UUID,
+		Title: survey.Title,
+		StartAt: survey.StartAt,
+		ExpireAt: survey.ExpireAt,
+		IsSequential: survey.IsSequential,
+		IsActive: survey.IsActive,
+		AllowsBackNavigation: survey.AllowsBackNavigation,
+		MaxAttempts: survey.MaxAttempts,
+		DurationMinutes: survey.DurationMinutes,
+		MinAge: survey.MinAge,
+		MaxAge: survey.MaxAge,
+		Gender: survey.Gender,
+		TargetCities: cities,
 	}
 }
 
@@ -47,5 +59,8 @@ func DomainToTypeMapper(survey Survey) types.Survey {
 		AllowsBackNavigation: survey.AllowsBackNavigation,
 		MaxAttempts: survey.MaxAttempts,
 		DurationMinutes: survey.DurationMinutes,
+		MinAge: survey.MinAge,
+		MaxAge: survey.MaxAge,
+		Gender: survey.Gender,
 	}
 }

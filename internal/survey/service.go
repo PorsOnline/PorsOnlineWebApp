@@ -25,7 +25,7 @@ func (ss *service) CreateSurvey(ctx context.Context, survey domain.Survey) (*dom
 	}
 	survey.UUID = newUUID
 	typeSurvey := domain.DomainToTypeMapper(survey)
-	createdSurvey, err := ss.repo.Create(ctx, typeSurvey)
+	createdSurvey, err := ss.repo.Create(ctx, typeSurvey, survey.TargetCities)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func (ss *service) CreateSurvey(ctx context.Context, survey domain.Survey) (*dom
 
 func (ss *service) UpdateSurvey(ctx context.Context, survey domain.Survey) (*domain.Survey, error) {
 	typeSurvey := domain.DomainToTypeMapper(survey)
-	updatedSurvey, err := ss.repo.Update(ctx, typeSurvey)
+	updatedSurvey, err := ss.repo.Update(ctx, typeSurvey, survey.TargetCities)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("survey not found")

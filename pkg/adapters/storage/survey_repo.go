@@ -35,7 +35,7 @@ func (sr *surveyRepo) Cancel(ctx context.Context, uuid uuid.UUID) error {
 
 func (sr *surveyRepo) Get(ctx context.Context, uuid uuid.UUID) (*types.Survey, error) {
 	var survey types.Survey
-	err := sr.db.Model(&types.Survey{}).Where("UUID = ?", uuid).Find(&survey).Error
+	err := sr.db.Preload("TargetCities").Where("UUID = ?", uuid).Find(&survey).Error
 	return &survey, err
 }
 
@@ -48,15 +48,53 @@ func (sr *surveyRepo) GetAll(ctx context.Context, page, pageSize int) ([]types.S
 	return surveys, nil
 }
 
-func (sr *surveyRepo) Create(ctx context.Context, survey types.Survey) (*types.Survey, error) {
-	return &survey, sr.db.Model(&types.Survey{}).Create(&survey).Error
+func (sr *surveyRepo) Create(ctx context.Context, survey types.Survey, cities []string) (*types.Survey, error) {
+	tx := sr.db.Begin()
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	err := tx.Debug().Model(&types.Survey{}).Create(&survey).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, city := range cities {
+		err := tx.Model(&types.SurveyCity{}).Debug().Create(&types.SurveyCity{SurveyID: survey.ID, Name: city}).Error
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+	}
+	tx.Commit()
+	return &survey, nil
 }
 
-func (sr *surveyRepo) Update(ctx context.Context, survey types.Survey) (*types.Survey, error) {
+func (sr *surveyRepo) Update(ctx context.Context, survey types.Survey, cities []string) (*types.Survey, error) {
 	var oldSurvey types.Survey
 	err := sr.db.Model(&types.Survey{}).Where("UUID = ?", survey.UUID).First(&oldSurvey).Error
 	if err != nil {
+		return nil, err
+	}
+	survey.ID = oldSurvey.ID
+	tx := sr.db.Begin()
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	err = tx.Debug().Model(&types.Survey{}).Where("id = ?", oldSurvey.ID).Save(&survey).Error
+	if err != nil {
+		return nil, err
+	}
+	err = sr.db.Model(&types.SurveyCity{}).Where("survey_id = ? ", survey.ID).Delete(&types.SurveyCity{}).Error
+	if err != nil {
+		tx.Rollback()
 		return &survey, err
 	}
-	return &survey, sr.db.Model(&types.Survey{}).Save(&survey).Error	
+	for _, city := range cities {
+		err = tx.Model(&types.SurveyCity{}).Debug().Create(&types.SurveyCity{SurveyID: survey.ID, Name: city}).Error
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+	}
+	tx.Commit()
+	return &survey, nil
 }
