@@ -38,6 +38,14 @@ func Run(appContainer app.App, config config.Config) error {
 			return c.SendString("STOP` SENDING TOO MUCH REQUESTS")
 		},
 	}))
+	surveyService := service.NewService(appContainer.SurveyService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
+	surveyApi := app.Group("api/v1/survey")
+	surveyApi.Post("", CreateSurvey(surveyService))
+	surveyApi.Get(":uuid", GetSurvey(surveyService))
+	surveyApi.Put(":uuid", UpdateSurvey(surveyService))
+	surveyApi.Post("cancel/:uuid", CancelSurvey(surveyService))
+	surveyApi.Delete(":uuid", DeleteSurvey(surveyService))
+	surveyApi.Get("", GetAllSurveys(surveyService))
 	userService := service.NewUserService(appContainer.UserService(),
 		config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 

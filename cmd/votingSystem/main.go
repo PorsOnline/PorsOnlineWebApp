@@ -14,7 +14,6 @@ import (
 var configPath = flag.String("config", "config.json", "service configuration file")
 
 func main() {
-
 	flag.Parse()
 
 	if v := os.Getenv("CONFIG_PATH"); len(v) > 0 {
