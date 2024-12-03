@@ -45,8 +45,18 @@ func (s *service) GetUserByID(ctx context.Context, userID domain.UserID) (*domai
 	if err != nil {
 		return nil, err
 	}
+	if user == nil || user.ID == 0 {
+		return nil, ErrUserNotFound
+	}
 
-	if user.ID == 0 {
+	return user, nil
+}
+func (s *service) GetUserByEmail(ctx context.Context, email domain.Email) (*domain.User, error) {
+	user, err := s.repo.GetByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil || user.ID == 0 {
 		return nil, ErrUserNotFound
 	}
 
