@@ -2,17 +2,6 @@
     "db": {
         "host": "localhost",
         "port": 5432,
-        "database": "porsOnline",
-        "user": "root",
-        "password": "root"
-    },
-    "server": {
-        "secret": "",
-        "auth_exp_minute": 3,
-        "auth_refresh_minute": 3,
-        "http_port": 8080,
-        "ip_address": "127.0.0.1"
-    }
         "database": "PorsOnlineDB",
         "s_database": "",
         "user": "admin",
