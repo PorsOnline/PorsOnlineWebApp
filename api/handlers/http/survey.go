@@ -29,8 +29,11 @@ func CreateSurvey(svc *service.SurveyService) fiber.Handler {
 
 func GetSurvey(svc *service.SurveyService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var param = c.Query("uuid")
-		uuid := uuid.MustParse(param)
+		var param = c.Params("uuid")
+		uuid, err := uuid.Parse(param)
+		if err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
 		resp, err := svc.GetSurvey(c.Context(), uuid)
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
@@ -41,8 +44,11 @@ func GetSurvey(svc *service.SurveyService) fiber.Handler {
 
 func UpdateSurvey(svc *service.SurveyService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var param = c.Query("uuid")
-		uuid := uuid.MustParse(param)
+		var param = c.Params("uuid")
+		uuid, err := uuid.Parse(param)
+		if err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
 		var req domain.Survey
 		if err := c.BodyParser(&req); err != nil {
 			return fiber.ErrBadRequest
@@ -58,9 +64,12 @@ func UpdateSurvey(svc *service.SurveyService) fiber.Handler {
 
 func CancelSurvey(svc *service.SurveyService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var param = c.Query("uuid")
-		uuid := uuid.MustParse(param)
-		err := svc.CancelSurvey(c.Context(), uuid)
+		var param = c.Params("uuid")
+		uuid, err := uuid.Parse(param)
+		if err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
+		err = svc.CancelSurvey(c.Context(), uuid)
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
@@ -70,9 +79,12 @@ func CancelSurvey(svc *service.SurveyService) fiber.Handler {
 
 func DeleteSurvey(svc *service.SurveyService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var param = c.Query("uuid")
-		uuid := uuid.MustParse(param)
-		err := svc.DeleteSurvey(c.Context(), uuid)
+		var param = c.Params("uuid")
+		uuid, err := uuid.Parse(param)
+		if err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
+		err = svc.DeleteSurvey(c.Context(), uuid)
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
