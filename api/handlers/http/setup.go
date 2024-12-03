@@ -20,6 +20,7 @@ func Run(appContainer app.App, config config.Config) error {
 	})
 
 	app.Use(logger.New())
+	app.Use(TraceMiddleware())
 	app.Use(limiter.New(limiter.Config{
 		Next: func(c *fiber.Ctx) bool {
 			return c.IP() == "127.0.0.1"
