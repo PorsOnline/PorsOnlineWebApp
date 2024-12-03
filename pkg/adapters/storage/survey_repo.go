@@ -20,7 +20,7 @@ func NewSurveyRepo(db *gorm.DB) surveyPort.Repo {
 }
 
 func (sr *surveyRepo) Delete(ctx context.Context, uuid uuid.UUID) error {
-	return	sr.db.Delete(&types.Survey{UUID: uuid}).Error
+	return	sr.db.Where("uuid = ?", uuid).Delete(&types.Survey{UUID: uuid}).Error
 }
 
 func (sr *surveyRepo) Cancel(ctx context.Context, uuid uuid.UUID) error {
@@ -41,7 +41,7 @@ func (sr *surveyRepo) Get(ctx context.Context, uuid uuid.UUID) (*types.Survey, e
 
 func (sr *surveyRepo) GetAll(ctx context.Context, page, pageSize int) ([]types.Survey, error) {
 	var surveys []types.Survey
-	err := sr.db.Model(&types.Survey{}).Limit(pageSize).Offset((page-1)*pageSize).Find(&surveys).Error
+	err := sr.db.Model(&types.Survey{}).Preload("TargetCities").Limit(pageSize).Offset((page-1)*pageSize).Where("deleted_at is null").Find(&surveys).Error
 	if err != nil {
 		return nil, err
 	}

@@ -69,5 +69,5 @@ func (ss *service) CancelSurvey(ctx context.Context, surveyUUID uuid.UUID) error
 }
 
 func (ss *service) DeleteSurvey(ctx context.Context, surveyUUID uuid.UUID) error {
-	return ss.repo.Cancel(ctx, surveyUUID)
+	return ss.repo.Delete(ctx, surveyUUID)
 }
