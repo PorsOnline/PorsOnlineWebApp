@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/porseOnline/api/service"
@@ -19,8 +20,11 @@ func Run(appContainer app.App, config config.Config) error {
 		EnablePrintRoutes: true,
 	})
 
-	app.Use(logger.New())
 	app.Use(TraceMiddleware())
+	app.Use(logger.New(logger.Config{
+		Format: "[${time}] ${status} - ${latency} ${method} ${path} TraceID: ${locals:traceID}\n",
+		Output: os.Stdout,
+	}))
 	app.Use(limiter.New(limiter.Config{
 		Next: func(c *fiber.Ctx) bool {
 			return c.IP() == "127.0.0.1"
