@@ -26,7 +26,7 @@ type User struct {
 	NationalCode      string
 	BirthDate         time.Time
 	City              string
-	Gender            string
+	Gender            bool
 	SurveyLimitNumber int
 	CreatedAt         time.Time
 	DeletedAt         time.Time
