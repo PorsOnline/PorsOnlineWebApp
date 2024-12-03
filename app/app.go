@@ -42,6 +42,7 @@ func (a *app) setDB() error {
 		DBName: a.cfg.DB.Database,
 		Schema: a.cfg.DB.Schema,
 	})
+	postgres.GormMigrations(db)
 
 	if err != nil {
 		return err
