@@ -1,6 +1,9 @@
 package http
 
 import (
+	"time"
+
+	"github.com/google/uuid"
 	"github.com/porseOnline/api/service"
 	"github.com/porseOnline/pkg/adapters/storage/types"
 
@@ -15,6 +18,9 @@ func SendMessage(srv *service.NotificationService) fiber.Handler {
 			return fiber.ErrBadRequest
 		}
 
+		req.ID = uuid.Must(uuid.NewRandom()).String()
+		req.Read = false
+		req.Create_at = time.Now()
 		err := srv.SendMessage(c.UserContext(), &req)
 		if err != nil {
 			log.Error("can not send message")
