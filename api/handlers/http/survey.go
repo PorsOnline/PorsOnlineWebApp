@@ -3,7 +3,6 @@ package http
 import (
 	"github.com/porseOnline/api/service"
 	"github.com/porseOnline/internal/survey/domain"
-	"encoding/json"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -24,11 +23,7 @@ func CreateSurvey(svc *service.SurveyService) fiber.Handler {
 
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
-		responsBody, err := json.Marshal(response)
-		if err != nil {
-			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
-		}
-		return c.JSON(responsBody)
+		return c.JSON(response)
 	}
 }
 
@@ -57,11 +52,7 @@ func UpdateSurvey(svc *service.SurveyService) fiber.Handler {
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
-		responsBody, err := json.Marshal(response)
-		if err != nil {
-			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
-		}
-		return c.JSON(responsBody)
+		return c.JSON(response)
 	}
 }
 

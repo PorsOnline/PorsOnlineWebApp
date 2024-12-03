@@ -49,7 +49,7 @@ func (sr *surveyRepo) GetAll(ctx context.Context, page, pageSize int) ([]types.S
 }
 
 func (sr *surveyRepo) Create(ctx context.Context, survey types.Survey) (*types.Survey, error) {
-	return &survey, sr.db.Model(&types.Survey{}).Create(survey).Error
+	return &survey, sr.db.Model(&types.Survey{}).Create(&survey).Error
 }
 
 func (sr *surveyRepo) Update(ctx context.Context, survey types.Survey) (*types.Survey, error) {
@@ -58,5 +58,5 @@ func (sr *surveyRepo) Update(ctx context.Context, survey types.Survey) (*types.S
 	if err != nil {
 		return &survey, err
 	}
-	return &survey, sr.db.Model(&types.Survey{}).Save(survey).Error	
+	return &survey, sr.db.Model(&types.Survey{}).Save(&survey).Error	
 }
