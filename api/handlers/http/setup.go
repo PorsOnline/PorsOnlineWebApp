@@ -60,6 +60,7 @@ func Run(appContainer app.App, config config.Config) error {
 
 	questionService := service.NewQuestionService(appContainer.QuestionService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	surveyApi.Post("/question", CreateQuestion(questionService))
+	surveyApi.Delete("/question/:id", DeleteQuestion(questionService))
 
 	return app.Listen(fmt.Sprintf(":%d", config.Server.HttpPort))
 }

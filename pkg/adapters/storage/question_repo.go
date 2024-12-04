@@ -55,3 +55,26 @@ func (q *questionRepo) GetNextQuestionOrder(ctx context.Context, surveyID uint) 
 	}
 	return prevQuestion.Order + 1, nil
 }
+
+func (q *questionRepo) Delete(ctx context.Context, id uint) error {
+	var question types.Question
+	err := q.db.Model(&types.Question{}).Where("id = ?", id).First(&question).Error
+	if err != nil {
+		return err
+	}
+	err = q.db.Model(&types.Question{}).Where("id = ?", id).Delete(&question).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (q *questionRepo) Get(ctx context.Context, id uint) (*types.Question, error) {
+	var question types.Question
+	err := q.db.Model(&types.Question{}).Where("id = ?", id).First(&question).Error
+	if err != nil {
+		return nil, err
+	}
+	return &question, nil
+}
+	

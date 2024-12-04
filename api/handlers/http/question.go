@@ -3,6 +3,7 @@ package http
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	validator "github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -35,5 +36,20 @@ func CreateQuestion(svc *service.QuestionService) fiber.Handler {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
 		return c.JSON(response)
+	}
+}
+
+func DeleteQuestion(svc *service.QuestionService) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		param := c.Params("id")
+		id, err := strconv.Atoi(param)
+		if err != nil {
+			return fiber.ErrBadRequest
+		}
+		err = svc.DeleteQuestion(c.UserContext(), uint(id))
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		}
+		return c.JSON("deleted successfully")
 	}
 }

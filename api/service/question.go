@@ -42,3 +42,7 @@ func (q *QuestionService) CreateQuestion(ctx context.Context, question *domain.Q
 	}
 	return q.srv.CreateQuestion(ctx, *question)
 }
+
+func (q *QuestionService) DeleteQuestion(ctx context.Context, id uint) (error) {
+	return q.srv.DeleteQuestion(ctx, id)
+}
