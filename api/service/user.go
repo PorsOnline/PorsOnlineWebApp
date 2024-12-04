@@ -2,13 +2,17 @@ package service
 
 import (
 	"context"
+	"strconv"
+	"time"
 
 	"github.com/porseOnline/api/pb"
 	"github.com/porseOnline/internal/user"
 	"github.com/porseOnline/internal/user/domain"
 	userPort "github.com/porseOnline/internal/user/port"
+	"github.com/porseOnline/pkg/helper"
 	"github.com/porseOnline/pkg/jwt"
-	"github.com/porseOnline/pkg/time"
+	helperTime "github.com/porseOnline/pkg/time"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	jwt2 "github.com/golang-jwt/jwt/v5"
 )
@@ -34,22 +38,44 @@ var (
 	ErrUserNotFound           = user.ErrUserNotFound
 )
 
-func (s *UserService) SignUp(ctx context.Context, req *pb.UserSignUpFirstRequest) (*pb.UserSignUpFirstResponse, error) {
+type SignUpFirstResponseWrapper struct {
+	RequestTimestamp int64                       `json:"requestTimestamp"`
+	Data             *pb.UserSignUpFirstResponse `json:"data"`
+}
+type SignUpSecondResponseWrapper struct {
+	RequestTimestamp int64                        `json:"requestTimestamp"`
+	Data             *pb.UserSignUpSecondResponse `json:"data"`
+}
+
+func (s *UserService) SignUp(ctx context.Context, req *pb.UserSignUpFirstRequest) (*SignUpFirstResponseWrapper, error) {
 	userID, err := s.svc.CreateUser(ctx, domain.User{
-		FirstName: req.GetFirstName(),
-		LastName:  req.GetLastName(),
-		Phone:     domain.Phone(req.GetPhone()),
+		FirstName:    req.GetFirstName(),
+		LastName:     req.GetLastName(),
+		Phone:        domain.Phone(req.GetPhone()),
+		Email:        domain.Email(req.GetEmail()),
+		PasswordHash: req.GetPassword(),
+		NationalCode: req.GetNationalCode(),
+		BirthDate:    req.GetBirthdate().AsTime(),
+		City:         req.GetCity(),
+		Gender:       req.GetGender(),
 	})
 
 	if err != nil {
 		return nil, err
 	}
+	// go helper.SendEmail(req.GetEmail())
+	go helper.SendEmail(req.GetEmail(), strconv.Itoa(helper.GetRandomCode()))
+	response := &SignUpFirstResponseWrapper{
+		RequestTimestamp: time.Now().Unix(),
+		Data: &pb.UserSignUpFirstResponse{
+			UserId: uint64(userID),
+		},
+	}
 
-	return &pb.UserSignUpFirstResponse{
-		UserId: uint64(userID),
-	}, nil
+	return response, nil
 }
-func (s *UserService) SignUpCodeVerification(ctx context.Context, req *pb.UserSignUpSecondRequest) (*pb.UserSignUpSecondResponse, error) {
+
+func (s *UserService) SignUpCodeVerification(ctx context.Context, req *pb.UserSignUpSecondRequest) (*SignUpSecondResponseWrapper, error) {
 	_, err := s.svc.GetUserByID(ctx, domain.UserID(req.GetUserId()))
 	if err != nil {
 		return nil, err
@@ -57,7 +83,7 @@ func (s *UserService) SignUpCodeVerification(ctx context.Context, req *pb.UserSi
 
 	accessToken, err := jwt.CreateToken([]byte(s.authSecret), &jwt.UserClaims{
 		RegisteredClaims: jwt2.RegisteredClaims{
-			ExpiresAt: jwt2.NewNumericDate(time.AddMinutes(s.expMin, true)),
+			ExpiresAt: jwt2.NewNumericDate(helperTime.AddMinutes(s.expMin, true)),
 		},
 		UserID: uint(req.GetUserId()),
 	})
@@ -67,7 +93,7 @@ func (s *UserService) SignUpCodeVerification(ctx context.Context, req *pb.UserSi
 
 	refreshToken, err := jwt.CreateToken([]byte(s.authSecret), &jwt.UserClaims{
 		RegisteredClaims: jwt2.RegisteredClaims{
-			ExpiresAt: jwt2.NewNumericDate(time.AddMinutes(s.refreshExpMin, true)),
+			ExpiresAt: jwt2.NewNumericDate(helperTime.AddMinutes(s.refreshExpMin, true)),
 		},
 		UserID: uint(req.GetUserId()),
 	})
@@ -76,10 +102,51 @@ func (s *UserService) SignUpCodeVerification(ctx context.Context, req *pb.UserSi
 		return nil, err
 	}
 
-	return &pb.UserSignUpSecondResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-	}, nil
+	response := &SignUpSecondResponseWrapper{
+		RequestTimestamp: time.Now().Unix(), // Get current UNIX timestamp
+		Data: &pb.UserSignUpSecondResponse{
+			AccessToken:  accessToken,
+			RefreshToken: refreshToken,
+		},
+	}
+	return response, nil
+
+}
+func (s *UserService) SignIn(ctx context.Context, req *pb.UserSignInRequest) (*SignUpSecondResponseWrapper, error) {
+	user, err := s.svc.GetUserByEmail(ctx, domain.Email(req.GetEmail()))
+	if err != nil {
+		return nil, err
+	}
+
+	accessToken, err := jwt.CreateToken([]byte(s.authSecret), &jwt.UserClaims{
+		RegisteredClaims: jwt2.RegisteredClaims{
+			ExpiresAt: jwt2.NewNumericDate(helperTime.AddMinutes(s.expMin, true)),
+		},
+		UserID: uint(user.ID),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	refreshToken, err := jwt.CreateToken([]byte(s.authSecret), &jwt.UserClaims{
+		RegisteredClaims: jwt2.RegisteredClaims{
+			ExpiresAt: jwt2.NewNumericDate(helperTime.AddMinutes(s.refreshExpMin, true)),
+		},
+		UserID: uint(user.ID),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SignUpSecondResponseWrapper{
+		RequestTimestamp: time.Now().Unix(), // Get current UNIX timestamp
+		Data: &pb.UserSignUpSecondResponse{
+			AccessToken:  accessToken,
+			RefreshToken: refreshToken,
+		},
+	}
+	return response, nil
 
 }
 
@@ -90,9 +157,20 @@ func (s *UserService) GetByID(ctx context.Context, id uint) (*pb.User, error) {
 	}
 
 	return &pb.User{
-		Id:        uint64(user.ID),
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Phone:     string(user.Phone),
+		Id:                uint64(user.ID),
+		FirstName:         user.FirstName,
+		LastName:          user.LastName,
+		Phone:             string(user.Phone),
+		Email:             string(user.Email),
+		PasswordHash:      user.PasswordHash,
+		NationalCode:      user.NationalCode,
+		BirthDate:         timestamppb.New(user.BirthDate), // Converts time.Time to protobuf Timestamp
+		City:              user.City,
+		Gender:            user.Gender,
+		SurveyLimitNumber: int32(user.SurveyLimitNumber), // Protobuf may require int32 instead of int
+		CreatedAt:         timestamppb.New(user.CreatedAt),
+		DeletedAt:         timestamppb.New(user.DeletedAt), // Handle DeletedAt if needed
+		UpdatedAt:         timestamppb.New(user.UpdatedAt),
+		Balance:           int32(user.Balance),
 	}, nil
 }

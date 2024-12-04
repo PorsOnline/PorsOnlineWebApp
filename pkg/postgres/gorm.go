@@ -1,22 +1,9 @@
-//	func NewConnection() *gorm.DB {
-//		host := helper.GetConfig("POSTGRES_HOST")
-//		user := helper.GetConfig("POSTGRES_USER")
-//		password := helper.GetConfig("POSTGRES_PASSWORD")
-//		dbname := helper.GetConfig("POSTGRES_DB_NAME")
-//		port := helper.GetConfig("POSTGRES_PORT")
-//		dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Tehran", host, user, password, dbname, port)
-//		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-//		if err != nil {
-//			fmt.Println(err)
-//			panic("Error connecting to database")
-//		}
-//		return db
-
 package postgres
 
 import (
 	"fmt"
 
+	"github.com/porseOnline/pkg/adapters/storage/types"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -40,4 +27,11 @@ func NewPsqlGormConnection(opt DBConnOptions) (*gorm.DB, error) {
 	return gorm.Open(postgres.Open(opt.PostgresDSN()), &gorm.Config{
 		Logger: logger.Discard,
 	})
+}
+func GormMigrations(db *gorm.DB) {
+	db.AutoMigrate(
+		&types.Notification{},
+		&types.User{},
+		&types.CodeVerification{},
+	)
 }

@@ -20,16 +20,16 @@ type Survey struct {
 	DurationMinutes      uint
 	MinAge               uint
 	MaxAge               uint
-	Gender               GenderEnum
+	Gender               bool
 	TargetCities         []SurveyCity
 }
 
 type GenderEnum int
 
 const (
-	Male   GenderEnum = 0
-	Female            = 1
-	Unkown            = 2
+	Male GenderEnum = iota
+	Female
+	Unknown
 )
 
 type SurveyCity struct {

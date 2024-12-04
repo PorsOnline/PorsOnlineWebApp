@@ -51,6 +51,7 @@ func Run(appContainer app.App, config config.Config) error {
 
 	api := app.Group("/api/v1")
 	api.Post("/sign-up", SignUp(userService))
+	api.Post("/sign-in", SignIn(userService))
 	api.Post("/sign-up-code-verification", SignUpCodeVerification(userService))
 
 	api.Get("/users/:id", GetUserByID(userService))
