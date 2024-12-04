@@ -27,6 +27,22 @@ func SignUp(svc *service.UserService) fiber.Handler {
 		return c.JSON(resp)
 	}
 }
+func SignIn(svc *service.UserService) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var req pb.UserSignInRequest
+		if err := c.BodyParser(&req); err != nil {
+			return fiber.ErrBadRequest
+		}
+
+		resp, err := svc.SignIn(c.UserContext(), &req)
+		if err != nil {
+
+			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		}
+
+		return c.JSON(resp)
+	}
+}
 func SignUpCodeVerification(svc *service.UserService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var req pb.UserSignUpSecondRequest
