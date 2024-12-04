@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/porseOnline/api/pb"
@@ -63,7 +64,7 @@ func (s *UserService) SignUp(ctx context.Context, req *pb.UserSignUpFirstRequest
 		return nil, err
 	}
 	// go helper.SendEmail(req.GetEmail())
-	go helper.SendEmail("r.nikookolah@gmail.com")
+	go helper.SendEmail(req.GetEmail(), strconv.Itoa(helper.GetRandomCode()))
 	response := &SignUpFirstResponseWrapper{
 		RequestTimestamp: time.Now().Unix(),
 		Data: &pb.UserSignUpFirstResponse{
