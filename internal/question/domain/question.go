@@ -7,13 +7,13 @@ import (
 
 type Question struct {
 	ID                    uint               `json:"id" validate:"omitempty"`
-	SurveyUUID            uuid.UUID          `json:"surveyUUID,required" validate:"required,uuid"`
+	SurveyUUID            uuid.UUID          `json:"surveyUUID" validate:"required"`
 	QuestionText          string             `json:"questionText" validate:"required"`
 	NextQuestionIfTrueID  *uint              `json:"nextQuestionIfTrueID" validate:"omitempty"`
 	NextQuestionIfFalseID *uint              `json:"nextQuestionIfFalseID" validate:"omitempty"`
 	CorrectAnswer         string             `json:"correctAnswer" validate:"omitempty"`
 	IsDependency          bool               `json:"isDependency" validate:"omitempty"`
-	QuestionType          types.QuestionType `json:"questionType" validate:"omitempty,oneof=Conditional ConditionalWithAnswer MultipleChoice MultipleChoiceWithAnswer Descriptive"`
+	QuestionType          types.QuestionType `json:"questionType" validate:"required,oneof=Conditional ConditionalWithAnswer MultipleChoice MultipleChoiceWithAnswer Descriptive"`
 	QuestionOptions       []QuestionOption   `json:"questionOptions" validate:"required"`
 }
 

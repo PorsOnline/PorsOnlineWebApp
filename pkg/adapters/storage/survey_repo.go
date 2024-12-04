@@ -25,7 +25,7 @@ func (sr *surveyRepo) Delete(ctx context.Context, uuid uuid.UUID) error {
 
 func (sr *surveyRepo) Cancel(ctx context.Context, uuid uuid.UUID) error {
 	var survey types.Survey
-	err := sr.db.Model(&types.Survey{}).Where("UUID = ?", uuid).Find(&survey).Error
+	err := sr.db.Model(&types.Survey{}).Where("UUID = ?", uuid).First(&survey).Error
 	if err != nil {
 		return err
 	}

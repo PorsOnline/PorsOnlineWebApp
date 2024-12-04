@@ -77,4 +77,41 @@ func (q *questionRepo) Get(ctx context.Context, id uint) (*types.Question, error
 	}
 	return &question, nil
 }
+
+func (q *questionRepo) Update(ctx context.Context, question types.Question) (*types.Question, error) {
+	var oldQuestion types.Question
+	err := q.db.Debug().Model(&types.Question{}).Where("id = ?", question.ID).First(&oldQuestion).Error
+	if err != nil {
+		return nil, err
+	}
+	tx := q.db.Begin()
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	err = tx.Model(&types.QuestionOption{}).Where("question_id = ?", question.ID).Delete(&types.QuestionOption{}).Error
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	err = tx.Debug().Model(&types.Question{}).Save(&question).Error
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	for _, option := range question.Options {
+		err := tx.Model(&types.QuestionOption{}).
+			Create(&types.QuestionOption{
+				QuestionID: question.ID,
+				OptionText: option.OptionText,
+				IsCorrect:  option.IsCorrect,
+			}).
+			Error
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+	}
+	tx.Commit()
+	return &question, nil
+}
 	

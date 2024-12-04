@@ -27,24 +27,10 @@ func (qs *questionService) CreateQuestion(ctx context.Context, question domain.Q
 		}
 		return domain.Question{}, err
 	}
-	if question.NextQuestionIfFalseID != nil && question.NextQuestionIfTrueID != nil {
-	_, err = qs.questionRepo.Get(ctx, *question.NextQuestionIfFalseID)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return domain.Question{}, errors.New("next question if false not found")
-			}
-			return domain.Question{}, err
-		}
-
-		_, err = qs.questionRepo.Get(ctx, *question.NextQuestionIfTrueID)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return domain.Question{}, errors.New("next question if true not found")
-			}
-			return domain.Question{}, err
-		}
+	err = qs.validateUserInputsExistence(ctx, question)
+	if err != nil {
+		return domain.Question{}, err
 	}
-
 	questionType := domain.DomainToTypeMapper(question, survey.ID)
 	if !question.IsDependency {
 		order, err := qs.questionRepo.GetNextQuestionOrder(ctx, questionType.SurveyID)
@@ -78,4 +64,44 @@ func (qs *questionService) GetQuestion(ctx context.Context, id uint) (*domain.Qu
 		return nil, err
 	}
 	return domain.TypeToDomainMapper(*question, survey.UUID), nil
+}
+
+func (qs *questionService) UpdateQuestion(ctx context.Context, question domain.Question) (domain.Question, error) {
+	survey, err := qs.surveyService.GetSurveyByUUID(ctx, question.SurveyUUID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return domain.Question{}, errors.New("survey not found")
+		}
+		return domain.Question{}, err
+	}
+	err = qs.validateUserInputsExistence(ctx, question)
+	if err != nil {
+		return domain.Question{}, err
+	}
+	questionType := domain.DomainToTypeMapper(question, survey.ID)
+	updateQuestion, err := qs.questionRepo.Update(ctx, questionType)
+	if err != nil {
+		return domain.Question{}, err
+	}
+	return *domain.TypeToDomainMapper(*updateQuestion, survey.UUID), nil
+}
+
+func (qs *questionService) validateUserInputsExistence(ctx context.Context, question domain.Question) error {
+	if question.NextQuestionIfFalseID != nil && question.NextQuestionIfTrueID != nil {
+		_, err := qs.questionRepo.Get(ctx, *question.NextQuestionIfFalseID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.New("next question if false not found")
+			}
+			return err
+		}
+		_, err = qs.questionRepo.Get(ctx, *question.NextQuestionIfTrueID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.New("next question if true not found")
+			}
+			return err
+		}
+	}
+	return nil
 }
