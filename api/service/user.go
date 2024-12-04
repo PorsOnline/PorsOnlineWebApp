@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/porseOnline/api/pb"
 	"github.com/porseOnline/internal/user"
 	"github.com/porseOnline/internal/user/domain"
 	userPort "github.com/porseOnline/internal/user/port"
+	"github.com/porseOnline/pkg/helper"
 	"github.com/porseOnline/pkg/jwt"
 	helperTime "github.com/porseOnline/pkg/time"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -47,17 +49,24 @@ type SignUpSecondResponseWrapper struct {
 
 func (s *UserService) SignUp(ctx context.Context, req *pb.UserSignUpFirstRequest) (*SignUpFirstResponseWrapper, error) {
 	userID, err := s.svc.CreateUser(ctx, domain.User{
-		FirstName: req.GetFirstName(),
-		LastName:  req.GetLastName(),
-		Phone:     domain.Phone(req.GetPhone()),
+		FirstName:    req.GetFirstName(),
+		LastName:     req.GetLastName(),
+		Phone:        domain.Phone(req.GetPhone()),
+		Email:        domain.Email(req.GetEmail()),
+		PasswordHash: req.GetPassword(),
+		NationalCode: req.GetNationalCode(),
+		BirthDate:    req.GetBirthdate().AsTime(),
+		City:         req.GetCity(),
+		Gender:       req.GetGender(),
 	})
 
 	if err != nil {
 		return nil, err
 	}
-
+	// go helper.SendEmail(req.GetEmail())
+	go helper.SendEmail(req.GetEmail(), strconv.Itoa(helper.GetRandomCode()))
 	response := &SignUpFirstResponseWrapper{
-		RequestTimestamp: time.Now().Unix(), // Get current UNIX timestamp
+		RequestTimestamp: time.Now().Unix(),
 		Data: &pb.UserSignUpFirstResponse{
 			UserId: uint64(userID),
 		},
@@ -65,6 +74,7 @@ func (s *UserService) SignUp(ctx context.Context, req *pb.UserSignUpFirstRequest
 
 	return response, nil
 }
+
 func (s *UserService) SignUpCodeVerification(ctx context.Context, req *pb.UserSignUpSecondRequest) (*SignUpSecondResponseWrapper, error) {
 	_, err := s.svc.GetUserByID(ctx, domain.UserID(req.GetUserId()))
 	if err != nil {
