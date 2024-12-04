@@ -54,7 +54,7 @@ func (s *UserService) SignUp(ctx context.Context, req *pb.UserSignUpFirstRequest
 		Phone:        domain.Phone(req.GetPhone()),
 		Email:        domain.Email(req.GetEmail()),
 		PasswordHash: req.GetPassword(),
-		NationalCode: req.GetNationalCode(),
+		NationalCode: domain.NationalCode(req.GetNationalCode()),
 		BirthDate:    req.GetBirthdate().AsTime(),
 		City:         req.GetCity(),
 		Gender:       req.GetGender(),
@@ -163,7 +163,7 @@ func (s *UserService) GetByID(ctx context.Context, id uint) (*pb.User, error) {
 		Phone:             string(user.Phone),
 		Email:             string(user.Email),
 		PasswordHash:      user.PasswordHash,
-		NationalCode:      user.NationalCode,
+		NationalCode:      string(user.NationalCode),
 		BirthDate:         timestamppb.New(user.BirthDate), // Converts time.Time to protobuf Timestamp
 		City:              user.City,
 		Gender:            user.Gender,
