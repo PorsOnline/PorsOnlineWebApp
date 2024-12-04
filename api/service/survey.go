@@ -24,7 +24,7 @@ func (s *SurveyService) CreateSurvey(ctx context.Context, survey *domain.Survey)
 }
 
 func (s *SurveyService) GetSurvey(ctx context.Context, uuid uuid.UUID) (*domain.Survey, error) {
-	return s.srv.GetSurvey(ctx, uuid)
+	return s.srv.GetSurveyByUUID(ctx, uuid)
 }
 
 func (s *SurveyService) UpdateSurvey(ctx context.Context, survey *domain.Survey) (*domain.Survey, error) {
