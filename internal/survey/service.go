@@ -56,8 +56,8 @@ func (ss *service) GetAllSurveys(ctx context.Context, page, pageSize int) ([]dom
 	return domainSurveys, nil
 }
 
-func (ss *service) GetSurvey(ctx context.Context, surveyUUID uuid.UUID) (*domain.Survey, error) {
-	survey, err := ss.repo.Get(ctx, surveyUUID)
+func (ss *service) GetSurveyByUUID(ctx context.Context, surveyUUID uuid.UUID) (*domain.Survey, error) {
+	survey, err := ss.repo.GetByUUID(ctx, surveyUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -70,4 +70,12 @@ func (ss *service) CancelSurvey(ctx context.Context, surveyUUID uuid.UUID) error
 
 func (ss *service) DeleteSurvey(ctx context.Context, surveyUUID uuid.UUID) error {
 	return ss.repo.Delete(ctx, surveyUUID)
+}
+
+func (ss *service) GetSurveyByID(ctx context.Context, surveyID uint) (*domain.Survey, error) {
+	survey, err := ss.repo.GetByID(ctx, surveyID)
+	if err != nil {
+		return nil, err
+	}
+	return domain.TypeToDomainMapper(*survey), nil
 }

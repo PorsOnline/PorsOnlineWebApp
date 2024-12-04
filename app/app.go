@@ -1,9 +1,11 @@
 package app
 
 import (
-	surveyPort "github.com/porseOnline/internal/survey/port"
-	"github.com/porseOnline/internal/survey"
 	"github.com/porseOnline/config"
+	"github.com/porseOnline/internal/question"
+	questionPort "github.com/porseOnline/internal/question/port"
+	"github.com/porseOnline/internal/survey"
+	surveyPort "github.com/porseOnline/internal/survey/port"
 	"github.com/porseOnline/internal/user"
 	userPort "github.com/porseOnline/internal/user/port"
 	"github.com/porseOnline/pkg/adapters/storage"
@@ -22,6 +24,7 @@ type app struct {
 	userService  userPort.Service
 	notifService notifPort.Service
 	surveyService surveyPort.Service
+	questionService questionPort.Service
 }
 
 func (a *app) UserService() userPort.Service {
@@ -34,6 +37,10 @@ func (a *app) NotifService() notifPort.Service {
 
 func (a *app) SurveyService() surveyPort.Service {
 	return a.surveyService
+}
+
+func (a *app) QuestionService() questionPort.Service {
+	return a.questionService
 }
 
 func (a *app) Config() config.Config {
@@ -73,6 +80,8 @@ func NewApp(cfg config.Config) (App, error) {
 	a.notifService = notification.NewService(storage.NewNotifRepo(a.db))
 
 	a.surveyService = survey.NewService(storage.NewSurveyRepo(a.db))
+
+	a.questionService = question.NewService(storage.NewQuestionRepo(a.db), a.surveyService)
 
 	return a, nil
 }

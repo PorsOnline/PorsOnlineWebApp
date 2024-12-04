@@ -25,7 +25,7 @@ func (sr *surveyRepo) Delete(ctx context.Context, uuid uuid.UUID) error {
 
 func (sr *surveyRepo) Cancel(ctx context.Context, uuid uuid.UUID) error {
 	var survey types.Survey
-	err := sr.db.Model(&types.Survey{}).Where("UUID = ?", uuid).Find(&survey).Error
+	err := sr.db.Model(&types.Survey{}).Where("UUID = ?", uuid).First(&survey).Error
 	if err != nil {
 		return err
 	}
@@ -33,10 +33,13 @@ func (sr *surveyRepo) Cancel(ctx context.Context, uuid uuid.UUID) error {
 	return sr.db.Model(&types.Survey{}).Where("UUID = ?", uuid).Save(&survey).Error
 }
 
-func (sr *surveyRepo) Get(ctx context.Context, uuid uuid.UUID) (*types.Survey, error) {
-	var survey types.Survey
-	err := sr.db.Preload("TargetCities").Where("UUID = ?", uuid).Find(&survey).Error
-	return &survey, err
+func (sr *surveyRepo) GetByUUID(ctx context.Context, uuid uuid.UUID) (*types.Survey, error) {
+	var survey *types.Survey
+	err := sr.db.Model(&types.Survey{}).Preload("TargetCities").Where("UUID = ?", uuid).First(&survey).Error
+	if err != nil {
+		return nil, err
+	}
+	return survey, nil
 }
 
 func (sr *surveyRepo) GetAll(ctx context.Context, page, pageSize int) ([]types.Survey, error) {
@@ -97,4 +100,13 @@ func (sr *surveyRepo) Update(ctx context.Context, survey types.Survey, cities []
 	}
 	tx.Commit()
 	return &survey, nil
+}
+
+func (sr *surveyRepo) GetByID(ctx context.Context, id uint) (*types.Survey, error) {
+	var survey *types.Survey
+	err := sr.db.Model(&types.Survey{}).Preload("TargetCities").Where("id = ?", id).First(&survey).Error
+	if err != nil {
+		return nil, err
+	}
+	return survey, nil
 }
