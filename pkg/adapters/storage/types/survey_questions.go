@@ -9,9 +9,10 @@ type Question struct {
 	Order                 int
 	NextQuestionIfTrueID  *uint
 	NextQuestionIfFalseID *uint
+	CorrectAnswer         string
 	QuestionType          QuestionType
 	Options               []QuestionOption
-	IsDependency          *bool
+	IsDependency          bool
 }
 
 type QuestionOption struct {
@@ -24,9 +25,9 @@ type QuestionOption struct {
 type QuestionType string
 
 const (
-	Conditional           QuestionType = "conditional"
-	ConditionalWithAnswer QuestionType = "conditional_with_answer"
-	Optional              QuestionType = "optional"
-	OptionalWithAnswer    QuestionType = "optional_with_answer"
-	Descriptive           QuestionType = "descriptive"
+	Conditional              QuestionType = "Conditional"
+	ConditionalWithAnswer    QuestionType = "ConditionalWithAnswer"
+	MultipleChoice           QuestionType = "MultipleChoice"
+	MultipleChoiceWithAnswer QuestionType = "MultipleChoiceWithAnswer"
+	Descriptive              QuestionType = "Descriptive"
 )

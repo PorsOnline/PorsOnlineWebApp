@@ -45,7 +45,7 @@ func (q *questionRepo) Create(ctx context.Context, question types.Question) (*ty
 
 func (q *questionRepo) GetNextQuestionOrder(ctx context.Context, surveyID uint) (int, error) {
 	var prevQuestion types.Question
-	err := q.db.Model(&types.Question{}).Where("is_dependency is null, survey_id = ?", surveyID).Order("order desc").First(&prevQuestion).Error
+	err := q.db.Debug().Order("\"order\" DESC").Where("is_dependency = false and survey_id = ?", surveyID).First(&prevQuestion).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return 1, nil

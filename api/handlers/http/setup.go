@@ -58,5 +58,8 @@ func Run(appContainer app.App, config config.Config) error {
 	api.Post("/send_message", SendMessage(notifService))
 	api.Get("/unread-messages/:user_id", GetUnreadMessages(notifService))
 
+	questionService := service.NewQuestionService(appContainer.QuestionService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
+	surveyApi.Post("/question", CreateQuestion(questionService))
+
 	return app.Listen(fmt.Sprintf(":%d", config.Server.HttpPort))
 }
