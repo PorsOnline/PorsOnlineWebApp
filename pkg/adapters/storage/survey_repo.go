@@ -34,9 +34,12 @@ func (sr *surveyRepo) Cancel(ctx context.Context, uuid uuid.UUID) error {
 }
 
 func (sr *surveyRepo) Get(ctx context.Context, uuid uuid.UUID) (*types.Survey, error) {
-	var survey types.Survey
-	err := sr.db.Preload("TargetCities").Where("UUID = ?", uuid).Find(&survey).Error
-	return &survey, err
+	var survey *types.Survey
+	err := sr.db.Model(&types.Survey{}).Preload("TargetCities").Where("UUID = ?", uuid).First(&survey).Error
+	if err != nil {
+		return nil, err
+	}
+	return survey, nil
 }
 
 func (sr *surveyRepo) GetAll(ctx context.Context, page, pageSize int) ([]types.Survey, error) {
