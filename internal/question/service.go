@@ -27,6 +27,24 @@ func (qs *questionService) CreateQuestion(ctx context.Context, question domain.Q
 		}
 		return domain.Question{}, err
 	}
+	if question.NextQuestionIfFalseID != nil && question.NextQuestionIfTrueID != nil {
+	_, err = qs.questionRepo.Get(ctx, *question.NextQuestionIfFalseID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return domain.Question{}, errors.New("next question if false not found")
+			}
+			return domain.Question{}, err
+		}
+
+		_, err = qs.questionRepo.Get(ctx, *question.NextQuestionIfTrueID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return domain.Question{}, errors.New("next question if true not found")
+			}
+			return domain.Question{}, err
+		}
+	}
+
 	questionType := domain.DomainToTypeMapper(question, survey.ID)
 	if !question.IsDependency {
 		order, err := qs.questionRepo.GetNextQuestionOrder(ctx, questionType.SurveyID)
