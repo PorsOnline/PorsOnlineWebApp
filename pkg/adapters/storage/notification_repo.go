@@ -34,6 +34,6 @@ func (r *notifRepo) GetUnreadMessages(ctx context.Context, userID string) ([]*do
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
-
+	r.db.Table("inbox").WithContext(ctx).Where("user_id = ? AND read = ?", userID, false).Updates(map[string]interface{}{"read": true})
 	return mapper.NotifStorage2Domain(notif), nil
 }

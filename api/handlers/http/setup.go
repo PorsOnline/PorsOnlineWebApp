@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/porseOnline/api/service"
@@ -19,7 +20,11 @@ func Run(appContainer app.App, config config.Config) error {
 		EnablePrintRoutes: true,
 	})
 
-	app.Use(logger.New())
+	app.Use(TraceMiddleware())
+	app.Use(logger.New(logger.Config{
+		Format: "[${time}] ${status} - ${latency} ${method} ${path} TraceID: ${locals:traceID}\n",
+		Output: os.Stdout,
+	}))
 	app.Use(limiter.New(limiter.Config{
 		Next: func(c *fiber.Ctx) bool {
 			return c.IP() == "127.0.0.1"
@@ -33,6 +38,14 @@ func Run(appContainer app.App, config config.Config) error {
 			return c.SendString("STOP` SENDING TOO MUCH REQUESTS")
 		},
 	}))
+	surveyService := service.NewService(appContainer.SurveyService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
+	surveyApi := app.Group("api/v1/survey")
+	surveyApi.Post("", CreateSurvey(surveyService))
+	surveyApi.Get(":uuid", GetSurvey(surveyService))
+	surveyApi.Put(":uuid", UpdateSurvey(surveyService))
+	surveyApi.Post("cancel/:uuid", CancelSurvey(surveyService))
+	surveyApi.Delete(":uuid", DeleteSurvey(surveyService))
+	surveyApi.Get("", GetAllSurveys(surveyService))
 	userService := service.NewUserService(appContainer.UserService(),
 		config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 
@@ -44,6 +57,7 @@ func Run(appContainer app.App, config config.Config) error {
 	api.Get("/users/:id", GetUserByID(userService))
 	notifService := service.NewNotificationSerivce(appContainer.NotifService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	api.Post("/send_message", SendMessage(notifService))
+	api.Get("/unread-messages/:user_id", GetUnreadMessages(notifService))
 
 	return app.Listen(fmt.Sprintf(":%d", config.Server.HttpPort))
 }
