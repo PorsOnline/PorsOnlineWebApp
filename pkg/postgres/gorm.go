@@ -31,5 +31,7 @@ func NewPsqlGormConnection(opt DBConnOptions) (*gorm.DB, error) {
 func GormMigrations(db *gorm.DB) {
 	db.AutoMigrate(
 		&types.Notification{},
-		&types.User{})
+		&types.User{},
+		&types.CodeVerification{},
+	)
 }
