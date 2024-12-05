@@ -3,12 +3,13 @@ package storage
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/porseOnline/internal/user/domain"
 	"github.com/porseOnline/internal/user/port"
 	"github.com/porseOnline/pkg/adapters/storage/mapper"
 	"github.com/porseOnline/pkg/adapters/storage/types"
-
+	"github.com/porseOnline/pkg/logger"
 	"gorm.io/gorm"
 )
 
@@ -57,4 +58,69 @@ func (r *userRepo) GetByEmail(ctx context.Context, email domain.Email) (*domain.
 	}
 
 	return mapper.UserStorage2Domain(user), nil
+}
+
+func (r *userRepo) UpdateUser(ctx context.Context, user domain.User) error {
+	var preUpdateUser types.User
+	err := r.db.Model(&types.User{}).Where("id = ?", user.ID).First((&preUpdateUser)).Error
+	if err != nil {
+		logger.Error(err.Error(), nil)
+		return err
+	}
+	currentTime := time.Now()
+	if currentTime.Sub(preUpdateUser.CreatedAt) > 24*time.Hour {
+		return errors.New("can not update user due to limitation of update time")
+	}
+	updates := make(map[string]interface{})
+	if user.FirstName != "" {
+		updates["first_name"] = user.FirstName
+	}
+
+	if user.FirstName != "" {
+		updates["last_name"] = user.LastName
+	}
+
+	if user.Phone != "" {
+		updates["phone"] = user.Phone
+	}
+
+	if user.Email != "" {
+		updates["email"] = user.Email
+	}
+
+	if user.NationalCode != "" {
+		updates["national_code"] = user.NationalCode
+	}
+
+	if user.BirthDate != preUpdateUser.BirthDate {
+		updates["birth_date"] = user.BirthDate
+	}
+
+	if user.City != "" {
+		updates["city"] = user.City
+	}
+
+	if user.Gender != preUpdateUser.Gender {
+		updates["gender"] = user.Gender
+	}
+
+	if user.SurveyLimitNumber != preUpdateUser.SurveyLimitNumber {
+		updates["survey_limit_number"] = user.SurveyLimitNumber
+	}
+
+	tx := r.db.Begin()
+	if tx.Error != nil {
+		logger.Error(tx.Error.Error(), nil)
+		return tx.Error
+	}
+
+	// Update the user record
+	if err := tx.Model(&types.User{}).Where("id = ?", user.ID).Updates(updates).Error; err != nil {
+		logger.Error(err.Error(), nil)
+		tx.Rollback()
+		return err
+	}
+
+	// Commit the transaction
+	return tx.Commit().Error
 }

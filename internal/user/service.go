@@ -62,3 +62,7 @@ func (s *service) GetUserByEmail(ctx context.Context, email domain.Email) (*doma
 
 	return user, nil
 }
+
+func (s *service) UpdateUser(ctx context.Context, user domain.User) error{
+	return nil
+}
