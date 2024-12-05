@@ -24,7 +24,7 @@ func (q *QuestionService) CreateQuestion(ctx context.Context, question *domain.Q
 	if err != nil {
 		return domain.Question{}, err
 	}
-	if question.QuestionType != types.MultipleChoice && question.QuestionType != types.MultipleChoiceWithAnswer {
+	if question.QuestionType == types.Descriptive {
 		question.QuestionOptions = nil
 	}
 	return q.srv.CreateQuestion(ctx, *question)
@@ -39,28 +39,22 @@ func (q *QuestionService) UpdateQuestion(ctx context.Context, question *domain.Q
 	if err != nil {
 		return domain.Question{}, err
 	}
-	if question.QuestionType != types.MultipleChoice && question.QuestionType != types.MultipleChoiceWithAnswer {
+	if question.QuestionType == types.Descriptive {
 		question.QuestionOptions = nil
 	}
 	return q.srv.CreateQuestion(ctx, *question)
 }
 
 func validateQuestionType(question domain.Question) error {
-	if question.QuestionType == types.MultipleChoiceWithAnswer {
-		if question.CorrectAnswer == "" {
-			return errors.New("please choose the question answer")
-		}
-		for i, option := range question.QuestionOptions {
-			if option.OptionText == question.CorrectAnswer {
-				break
-			}
-			if i == len(question.QuestionOptions)-1 {
-				return errors.New("please choose the question answer correctly")
+	var countCorrectAnswers int
+	if question.QuestionType == types.MultipleChoiceWithAnswer{
+		for _, option := range question.QuestionOptions {
+			if option.IsCorrect {
+				countCorrectAnswers += 1
 			}
 		}
-	} else if question.QuestionType == types.ConditionalWithAnswer {
-		if !(question.CorrectAnswer == "true" || question.CorrectAnswer == "false") {
-			return errors.New("please choose the question answer")
+		if countCorrectAnswers != 1 {
+			return errors.New("choose correct answer correctly")
 		}
 	}
 	return nil

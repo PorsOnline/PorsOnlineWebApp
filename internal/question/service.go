@@ -8,6 +8,7 @@ import (
 	"github.com/porseOnline/internal/question/domain"
 	questionPort "github.com/porseOnline/internal/question/port"
 	surveyPort "github.com/porseOnline/internal/survey/port"
+	"github.com/porseOnline/pkg/adapters/storage/types"
 	"gorm.io/gorm"
 )
 
@@ -111,38 +112,18 @@ func (qs *questionService) UpdateQuestion(ctx context.Context, question domain.Q
 }
 
 func (qs *questionService) validateUserInputsExistence(ctx context.Context, question domain.Question, surveyID uint) error {
-	if question.NextQuestionIfFalseID != nil && question.NextQuestionIfTrueID != nil {
-		nextQuestionIfFalseID, err := qs.questionRepo.Get(ctx, *question.NextQuestionIfFalseID)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return errors.New("next question if false not found")
+	if question.QuestionType == types.ConditionalMultipleChoice {
+		for _, option := range question.QuestionOptions {
+			nextQuestionID, err := qs.questionRepo.Get(ctx, *option.NextQuestionID)
+			if err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return errors.New(fmt.Sprintf("next question for %v not found", option.OptionText))
+				}
+				return err
 			}
-			return err
-		}
-		if nextQuestionIfFalseID.SurveyID != surveyID {
-			return errors.New("survey id mismatch")
-		}
-		nextQuestionIfTrueID, err := qs.questionRepo.Get(ctx, *question.NextQuestionIfTrueID)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return errors.New("next question if true not found")
+			if nextQuestionID.SurveyID != surveyID {
+				return errors.New("survey id mismatch")
 			}
-			return err
-		}
-		if nextQuestionIfTrueID.SurveyID != surveyID {
-			return errors.New("survey id mismatch")
-		}
-	}
-	for _, option := range question.QuestionOptions {
-		nextQuestionID, err := qs.questionRepo.Get(ctx, *option.NextQuestionID)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return errors.New(fmt.Sprintf("next question for %v not found", option.OptionText))
-			}
-			return err
-		}
-		if nextQuestionID.SurveyID != surveyID {
-			return errors.New("survey id mismatch")
 		}
 	}
 	return nil
