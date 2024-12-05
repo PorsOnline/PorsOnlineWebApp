@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"time"
 
@@ -12,9 +13,14 @@ import (
 	"github.com/porseOnline/pkg/helper"
 	"github.com/porseOnline/pkg/jwt"
 	helperTime "github.com/porseOnline/pkg/time"
+	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	jwt2 "github.com/golang-jwt/jwt/v5"
+)
+
+var (
+	ErrPasswordNotMatch = errors.New("not match password")
 )
 
 type UserService struct {
@@ -117,7 +123,10 @@ func (s *UserService) SignIn(ctx context.Context, req *pb.UserSignInRequest) (*S
 	if err != nil {
 		return nil, err
 	}
-
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.GetPassword()))
+	if err != nil {
+		return nil, ErrPasswordNotMatch
+	}
 	accessToken, err := jwt.CreateToken([]byte(s.authSecret), &jwt.UserClaims{
 		RegisteredClaims: jwt2.RegisteredClaims{
 			ExpiresAt: jwt2.NewNumericDate(helperTime.AddMinutes(s.expMin, true)),
