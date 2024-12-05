@@ -8,6 +8,7 @@ import (
 
 	"github.com/porseOnline/internal/user/domain"
 	"github.com/porseOnline/internal/user/port"
+	"github.com/porseOnline/pkg/logger"
 )
 
 var (
@@ -61,4 +62,22 @@ func (s *service) GetUserByEmail(ctx context.Context, email domain.Email) (*doma
 	}
 
 	return user, nil
+}
+
+func (s *service) UpdateUser(ctx context.Context, user domain.User) error {
+	err := s.repo.UpdateUser(ctx, user)
+	if err != nil {
+		logger.Error("error in update user", nil)
+		return err
+	}
+	return nil
+}
+
+func (s *service) DeleteByID(ctx context.Context, userID domain.UserID) error{
+	err:=s.repo.DeleteByID(ctx, userID)
+	if err!=nil{
+		logger.Error("can not delete user", nil)
+		return err
+	}
+	return nil
 }

@@ -6,6 +6,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/porseOnline/api/pb"
 	"github.com/porseOnline/api/service"
+	"github.com/porseOnline/pkg/adapters/storage/types"
+	"github.com/porseOnline/pkg/logger"
 )
 
 func SignUp(svc *service.UserService) fiber.Handler {
@@ -79,5 +81,36 @@ func GetUserByID(svc *service.UserService) fiber.Handler {
 		}
 
 		return c.JSON(resp)
+	}
+}
+
+func Update(svc *service.UserService) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var req types.User
+		if err := c.BodyParser(&req); err != nil {
+			return fiber.ErrBadRequest
+		}
+		err := svc.Update(c.UserContext(), &req)
+		if err != nil {
+			logger.Error("error in update user", nil)
+			return err
+		}
+		return nil
+	}
+}
+
+func DeleteByID(svc *service.UserService) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		id, err := c.ParamsInt("id")
+		if err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
+		err = svc.DeleteByID(c.UserContext(), id)
+		if err != nil {
+			logger.Error("error in delete user", nil)
+			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		}
+		logger.Info("deleted user successfully", nil)
+		return nil
 	}
 }
