@@ -27,7 +27,7 @@ func (qs *questionService) CreateQuestion(ctx context.Context, question domain.Q
 		}
 		return domain.Question{}, err
 	}
-	err = qs.validateUserInputsExistence(ctx, question)
+	err = qs.validateUserInputsExistence(ctx, question, survey.ID)
 	if err != nil {
 		return domain.Question{}, err
 	}
@@ -74,7 +74,7 @@ func (qs *questionService) UpdateQuestion(ctx context.Context, question domain.Q
 		}
 		return domain.Question{}, err
 	}
-	err = qs.validateUserInputsExistence(ctx, question)
+	err = qs.validateUserInputsExistence(ctx, question, survey.ID)
 	if err != nil {
 		return domain.Question{}, err
 	}
@@ -86,21 +86,27 @@ func (qs *questionService) UpdateQuestion(ctx context.Context, question domain.Q
 	return *domain.TypeToDomainMapper(*updateQuestion, survey.UUID), nil
 }
 
-func (qs *questionService) validateUserInputsExistence(ctx context.Context, question domain.Question) error {
+func (qs *questionService) validateUserInputsExistence(ctx context.Context, question domain.Question, surveyID uint) error {
 	if question.NextQuestionIfFalseID != nil && question.NextQuestionIfTrueID != nil {
-		_, err := qs.questionRepo.Get(ctx, *question.NextQuestionIfFalseID)
+		nextQuestionIfFalseID, err := qs.questionRepo.Get(ctx, *question.NextQuestionIfFalseID)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return errors.New("next question if false not found")
 			}
 			return err
 		}
-		_, err = qs.questionRepo.Get(ctx, *question.NextQuestionIfTrueID)
+		if nextQuestionIfFalseID.SurveyID != surveyID {
+			return errors.New("survey id mismatch")
+		}
+		nextQuestionIfTrueID, err := qs.questionRepo.Get(ctx, *question.NextQuestionIfTrueID)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return errors.New("next question if true not found")
 			}
 			return err
+		}
+		if nextQuestionIfTrueID.SurveyID != surveyID {
+			return errors.New("survey id mismatch")
 		}
 	}
 	return nil

@@ -14,7 +14,7 @@ type Question struct {
 	CorrectAnswer         string             `json:"correctAnswer" validate:"omitempty"`
 	IsDependency          bool               `json:"isDependency" validate:"omitempty"`
 	QuestionType          types.QuestionType `json:"questionType" validate:"required,oneof=Conditional ConditionalWithAnswer MultipleChoice MultipleChoiceWithAnswer Descriptive"`
-	QuestionOptions       []QuestionOption   `json:"questionOptions" validate:"required"`
+	QuestionOptions       []QuestionOption   `json:"questionOptions" validate:"omitempty"`
 }
 
 type QuestionOption struct {

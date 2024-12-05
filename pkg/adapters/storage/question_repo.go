@@ -57,8 +57,16 @@ func (q *questionRepo) GetNextQuestionOrder(ctx context.Context, surveyID uint) 
 }
 
 func (q *questionRepo) Delete(ctx context.Context, id uint) error {
+	var dependencyExists bool
+	err := q.db.Model(&types.Question{}).Select("count(id)>0").Where("(next_question_if_true_id = ? or next_question_if_false_id = ?) and deleted_at is null", id, id).Find(&dependencyExists).Error
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+	if dependencyExists {
+		return errors.New("can not delete question")
+	}
 	var question types.Question
-	err := q.db.Model(&types.Question{}).Where("id = ?", id).First(&question).Error
+	err = q.db.Model(&types.Question{}).Where("id = ?", id).First(&question).Error
 	if err != nil {
 		return err
 	}
