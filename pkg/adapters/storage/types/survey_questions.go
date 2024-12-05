@@ -7,8 +7,6 @@ type Question struct {
 	SurveyID              uint
 	QuestionText          string
 	Order                 int
-	NextQuestionIfTrueID  *uint
-	NextQuestionIfFalseID *uint
 	CorrectAnswer         string
 	QuestionType          QuestionType
 	Options               []QuestionOption

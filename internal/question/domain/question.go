@@ -18,21 +18,27 @@ type Question struct {
 }
 
 type QuestionOption struct {
-	OptionText string
+	OptionText     string
 	NextQuestionID *uint
 }
 
 func TypeToDomainMapper(question types.Question, surveyUUID uuid.UUID) *Question {
 	var questions []QuestionOption
-	for _, option := range question.Options {
-		questions = append(questions, QuestionOption{OptionText: option.OptionText, NextQuestionID: option.NextQuestionID})
+	var nextQuestionIfFalseID, nextQuestionIfTrueID *uint
+	if question.QuestionType == types.Conditional || question.QuestionType == types.ConditionalWithAnswer {
+		nextQuestionIfFalseID = question.Options[1].NextQuestionID
+		nextQuestionIfTrueID = question.Options[0].NextQuestionID
+	} else {
+		for _, option := range question.Options {
+			questions = append(questions, QuestionOption{OptionText: option.OptionText, NextQuestionID: option.NextQuestionID})
+		}
 	}
 	return &Question{
 		ID:                    question.ID,
 		SurveyUUID:            surveyUUID,
 		QuestionText:          question.QuestionText,
-		NextQuestionIfTrueID:  question.NextQuestionIfTrueID,
-		NextQuestionIfFalseID: question.NextQuestionIfFalseID,
+		NextQuestionIfTrueID:  nextQuestionIfTrueID,
+		NextQuestionIfFalseID: nextQuestionIfFalseID,
 		IsDependency:          question.IsDependency,
 		QuestionType:          question.QuestionType,
 		QuestionOptions:       questions,
@@ -45,14 +51,16 @@ func DomainToTypeMapper(question Question, surveyID uint) types.Question {
 	for _, option := range question.QuestionOptions {
 		questions = append(questions, types.QuestionOption{OptionText: option.OptionText, NextQuestionID: option.NextQuestionID})
 	}
+	if question.QuestionType == types.Conditional || question.QuestionType == types.ConditionalWithAnswer {
+		questions = append(questions, types.QuestionOption{OptionText: "true", NextQuestionID: question.NextQuestionIfTrueID})
+		questions = append(questions, types.QuestionOption{OptionText: "false", NextQuestionID: question.NextQuestionIfTrueID})
+	}
 	return types.Question{
-		SurveyID:              surveyID,
-		QuestionText:          question.QuestionText,
-		NextQuestionIfTrueID:  question.NextQuestionIfTrueID,
-		NextQuestionIfFalseID: question.NextQuestionIfFalseID,
-		IsDependency:          question.IsDependency,
-		QuestionType:          question.QuestionType,
-		Options:               questions,
-		CorrectAnswer:         question.CorrectAnswer,
+		SurveyID:      surveyID,
+		QuestionText:  question.QuestionText,
+		IsDependency:  question.IsDependency,
+		QuestionType:  question.QuestionType,
+		Options:       questions,
+		CorrectAnswer: question.CorrectAnswer,
 	}
 }

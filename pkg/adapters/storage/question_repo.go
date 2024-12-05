@@ -44,7 +44,7 @@ func (q *questionRepo) GetNextQuestionOrder(ctx context.Context, surveyID uint) 
 
 func (q *questionRepo) Delete(ctx context.Context, id uint) error {
 	var dependencyExists bool
-	err := q.db.Model(&types.Question{}).Select("count(id)>0").Where("(next_question_if_true_id = ? or next_question_if_false_id = ?) and deleted_at is null", id, id).Find(&dependencyExists).Error
+	err := q.db.Model(&types.Question{}).Select("count(questions.id)>0").Joins("left join question_options op on questions.id = op.question_id").Where("op.next_question_id = ? and questions.deleted_at is null", id).Find(&dependencyExists).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return err
 	}
@@ -92,8 +92,7 @@ func (q *questionRepo) DeleteQuestionOptions(ctx context.Context, questionID uin
 
 func (q *questionRepo) CreateQuestionOptions(ctx context.Context, options []types.QuestionOption, questionID uint, tx *gorm.DB) ([]types.QuestionOption, error) {
 	for _, option := range options {
-		option.QuestionID = questionID
-		err := tx.Model(&types.QuestionOption{}).Create(&option).Error
+		err := tx.Model(&types.QuestionOption{}).Create(&types.QuestionOption{QuestionID: questionID,OptionText: option.OptionText, NextQuestionID: option.NextQuestionID}).Error
 		if err != nil {
 			return nil, err
 		}

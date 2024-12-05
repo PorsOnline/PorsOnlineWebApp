@@ -3,6 +3,7 @@ package question
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/porseOnline/internal/question/domain"
 	questionPort "github.com/porseOnline/internal/question/port"
@@ -45,7 +46,7 @@ func (qs *questionService) CreateQuestion(ctx context.Context, question domain.Q
 		tx.Rollback()
 		return domain.Question{}, err
 	}
-	options, err := qs.questionRepo.CreateQuestionOptions(ctx, questionType.Options, question.ID, tx)
+	options, err := qs.questionRepo.CreateQuestionOptions(ctx, questionType.Options, createdQuestion.ID, tx)
 	if err != nil {
 		tx.Rollback()
 		return domain.Question{}, err
@@ -99,7 +100,7 @@ func (qs *questionService) UpdateQuestion(ctx context.Context, question domain.Q
 		tx.Rollback()
 		return domain.Question{}, err
 	}
-	options, err := qs.questionRepo.CreateQuestionOptions(ctx, questionType.Options, question.ID, tx)
+	options, err := qs.questionRepo.CreateQuestionOptions(ctx, questionType.Options, updatedQuestion.ID, tx)
 	if err != nil {
 		tx.Rollback()
 		return domain.Question{}, err
@@ -129,6 +130,18 @@ func (qs *questionService) validateUserInputsExistence(ctx context.Context, ques
 			return err
 		}
 		if nextQuestionIfTrueID.SurveyID != surveyID {
+			return errors.New("survey id mismatch")
+		}
+	}
+	for _, option := range question.QuestionOptions {
+		nextQuestionID, err := qs.questionRepo.Get(ctx, *option.NextQuestionID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.New(fmt.Sprintf("next question for %v not found", option.OptionText))
+			}
+			return err
+		}
+		if nextQuestionID.SurveyID != surveyID {
 			return errors.New("survey id mismatch")
 		}
 	}
