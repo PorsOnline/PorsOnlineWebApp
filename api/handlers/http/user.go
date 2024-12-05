@@ -91,10 +91,26 @@ func Update(svc *service.UserService) fiber.Handler {
 			return fiber.ErrBadRequest
 		}
 		err := svc.Update(c.UserContext(), &req)
-		if err!=nil{
+		if err != nil {
 			logger.Error("error in update user", nil)
 			return err
 		}
+		return nil
+	}
+}
+
+func DeleteByID(svc *service.UserService) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		id, err := c.ParamsInt("id")
+		if err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
+		err = svc.DeleteByID(c.UserContext(), id)
+		if err != nil {
+			logger.Error("error in delete user", nil)
+			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		}
+		logger.Info("deleted user successfully", nil)
 		return nil
 	}
 }

@@ -11,4 +11,5 @@ type Service interface {
 	GetUserByID(ctx context.Context, userID domain.UserID) (*domain.User, error)
 	GetUserByEmail(ctx context.Context, email domain.Email) (*domain.User, error)
 	UpdateUser(ctx context.Context, user domain.User) error
+	DeleteByID(ctx context.Context, userID domain.UserID) error
 }

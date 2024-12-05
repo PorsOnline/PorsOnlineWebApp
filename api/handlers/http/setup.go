@@ -54,6 +54,7 @@ func Run(appContainer app.App, config config.Config) error {
 	api.Post("/sign-in", SignIn(userService))
 	api.Post("/sign-up-code-verification", SignUpCodeVerification(userService))
 	api.Put("/user/update", Update(userService))
+	api.Delete("/user/:id", DeleteByID(userService))
 
 	api.Get("/users/:id", GetUserByID(userService))
 	notifService := service.NewNotificationSerivce(appContainer.NotifService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)

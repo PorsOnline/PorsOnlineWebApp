@@ -124,3 +124,7 @@ func (r *userRepo) UpdateUser(ctx context.Context, user domain.User) error {
 	// Commit the transaction
 	return tx.Commit().Error
 }
+
+func (r *userRepo) DeleteByID(ctx context.Context, userID domain.UserID) error{
+	return	r.db.Where("id = ?", userID).Delete(&types.User{}).Error
+}

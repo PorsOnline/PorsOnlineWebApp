@@ -200,3 +200,14 @@ func (s *UserService) Update(ctx context.Context, user *types.User) error {
 	}
 	return nil
 }
+
+func (s *UserService) DeleteByID(ctx context.Context, userID int) error {
+	err := s.svc.DeleteByID(ctx, domain.UserID(userID))
+	if err != nil {
+		logger.Error("can not delete user", nil)
+		return err
+	}
+
+	logger.Info("deleted user with id "+strconv.Itoa(int(userID)), nil)
+	return nil
+}

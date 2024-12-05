@@ -72,3 +72,12 @@ func (s *service) UpdateUser(ctx context.Context, user domain.User) error {
 	}
 	return nil
 }
+
+func (s *service) DeleteByID(ctx context.Context, userID domain.UserID) error{
+	err:=s.repo.DeleteByID(ctx, userID)
+	if err!=nil{
+		logger.Error("can not delete user", nil)
+		return err
+	}
+	return nil
+}
