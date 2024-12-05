@@ -3,10 +3,12 @@ package question
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/porseOnline/internal/question/domain"
 	questionPort "github.com/porseOnline/internal/question/port"
 	surveyPort "github.com/porseOnline/internal/survey/port"
+	"github.com/porseOnline/pkg/adapters/storage/types"
 	"gorm.io/gorm"
 )
 
@@ -27,7 +29,7 @@ func (qs *questionService) CreateQuestion(ctx context.Context, question domain.Q
 		}
 		return domain.Question{}, err
 	}
-	err = qs.validateUserInputsExistence(ctx, question)
+	err = qs.validateUserInputsExistence(ctx, question, survey.ID)
 	if err != nil {
 		return domain.Question{}, err
 	}
@@ -39,10 +41,19 @@ func (qs *questionService) CreateQuestion(ctx context.Context, question domain.Q
 		}
 		questionType.Order = order
 	}
-	createdQuestion, err := qs.questionRepo.Create(ctx, questionType)
+	tx := qs.questionRepo.GetDB(ctx).Begin()
+	createdQuestion, err := qs.questionRepo.Create(ctx, questionType, tx)
 	if err != nil {
+		tx.Rollback()
 		return domain.Question{}, err
 	}
+	options, err := qs.questionRepo.CreateQuestionOptions(ctx, questionType.Options, createdQuestion.ID, tx)
+	if err != nil {
+		tx.Rollback()
+		return domain.Question{}, err
+	}
+	tx.Commit()
+	createdQuestion.Options = options
 	return *domain.TypeToDomainMapper(*createdQuestion, survey.UUID), nil
 }
 
@@ -74,33 +85,45 @@ func (qs *questionService) UpdateQuestion(ctx context.Context, question domain.Q
 		}
 		return domain.Question{}, err
 	}
-	err = qs.validateUserInputsExistence(ctx, question)
+	err = qs.validateUserInputsExistence(ctx, question, survey.ID)
 	if err != nil {
 		return domain.Question{}, err
 	}
 	questionType := domain.DomainToTypeMapper(question, survey.ID)
-	updateQuestion, err := qs.questionRepo.Update(ctx, questionType)
+	tx := qs.questionRepo.GetDB(ctx).Begin()
+	updatedQuestion, err := qs.questionRepo.Update(ctx, questionType, tx)
 	if err != nil {
+		tx.Rollback()
 		return domain.Question{}, err
 	}
-	return *domain.TypeToDomainMapper(*updateQuestion, survey.UUID), nil
+	err = qs.questionRepo.DeleteQuestionOptions(ctx, question.ID, tx)
+	if err != nil {
+		tx.Rollback()
+		return domain.Question{}, err
+	}
+	options, err := qs.questionRepo.CreateQuestionOptions(ctx, questionType.Options, updatedQuestion.ID, tx)
+	if err != nil {
+		tx.Rollback()
+		return domain.Question{}, err
+	}
+	tx.Commit()
+	updatedQuestion.Options = options
+	return *domain.TypeToDomainMapper(*updatedQuestion, survey.UUID), nil
 }
 
-func (qs *questionService) validateUserInputsExistence(ctx context.Context, question domain.Question) error {
-	if question.NextQuestionIfFalseID != nil && question.NextQuestionIfTrueID != nil {
-		_, err := qs.questionRepo.Get(ctx, *question.NextQuestionIfFalseID)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return errors.New("next question if false not found")
+func (qs *questionService) validateUserInputsExistence(ctx context.Context, question domain.Question, surveyID uint) error {
+	if question.QuestionType == types.ConditionalMultipleChoice {
+		for _, option := range question.QuestionOptions {
+			nextQuestionID, err := qs.questionRepo.Get(ctx, *option.NextQuestionID)
+			if err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return errors.New(fmt.Sprintf("next question for %v not found", option.OptionText))
+				}
+				return err
 			}
-			return err
-		}
-		_, err = qs.questionRepo.Get(ctx, *question.NextQuestionIfTrueID)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return errors.New("next question if true not found")
+			if nextQuestionID.SurveyID != surveyID {
+				return errors.New("survey id mismatch")
 			}
-			return err
 		}
 	}
 	return nil
