@@ -8,6 +8,7 @@ import (
 
 	"github.com/porseOnline/internal/user/domain"
 	"github.com/porseOnline/internal/user/port"
+	"github.com/porseOnline/pkg/logger"
 )
 
 var (
@@ -63,6 +64,11 @@ func (s *service) GetUserByEmail(ctx context.Context, email domain.Email) (*doma
 	return user, nil
 }
 
-func (s *service) UpdateUser(ctx context.Context, user domain.User) error{
+func (s *service) UpdateUser(ctx context.Context, user domain.User) error {
+	err := s.repo.UpdateUser(ctx, user)
+	if err != nil {
+		logger.Error("error in update user", nil)
+		return err
+	}
 	return nil
 }
