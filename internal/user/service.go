@@ -8,6 +8,7 @@ import (
 
 	"github.com/porseOnline/internal/user/domain"
 	"github.com/porseOnline/internal/user/port"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -30,7 +31,12 @@ func (s *service) CreateUser(ctx context.Context, user domain.User) (domain.User
 	if err := user.Validate(); err != nil {
 		return 0, fmt.Errorf("%w %w", ErrUserCreationValidation, err)
 	}
-
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.PasswordHash), bcrypt.DefaultCost)
+	if err != nil {
+		log.Println("Error while hashing password : ", err.Error())
+		return 0, ErrUserOnCreate
+	}
+	user.PasswordHash = string(hashedPassword)
 	userID, err := s.repo.Create(ctx, user)
 	if err != nil {
 		log.Println("error on creating new user : ", err.Error())
