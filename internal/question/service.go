@@ -39,10 +39,19 @@ func (qs *questionService) CreateQuestion(ctx context.Context, question domain.Q
 		}
 		questionType.Order = order
 	}
-	createdQuestion, err := qs.questionRepo.Create(ctx, questionType)
+	tx := qs.questionRepo.GetDB(ctx).Begin()
+	createdQuestion, err := qs.questionRepo.Create(ctx, questionType, tx)
 	if err != nil {
+		tx.Rollback()
 		return domain.Question{}, err
 	}
+	options, err := qs.questionRepo.CreateQuestionOptions(ctx, questionType.Options, question.ID, tx)
+	if err != nil {
+		tx.Rollback()
+		return domain.Question{}, err
+	}
+	tx.Commit()
+	createdQuestion.Options = options
 	return *domain.TypeToDomainMapper(*createdQuestion, survey.UUID), nil
 }
 
@@ -79,11 +88,25 @@ func (qs *questionService) UpdateQuestion(ctx context.Context, question domain.Q
 		return domain.Question{}, err
 	}
 	questionType := domain.DomainToTypeMapper(question, survey.ID)
-	updateQuestion, err := qs.questionRepo.Update(ctx, questionType)
+	tx := qs.questionRepo.GetDB(ctx).Begin()
+	updatedQuestion, err := qs.questionRepo.Update(ctx, questionType, tx)
 	if err != nil {
+		tx.Rollback()
 		return domain.Question{}, err
 	}
-	return *domain.TypeToDomainMapper(*updateQuestion, survey.UUID), nil
+	err = qs.questionRepo.DeleteQuestionOptions(ctx, question.ID, tx)
+	if err != nil {
+		tx.Rollback()
+		return domain.Question{}, err
+	}
+	options, err := qs.questionRepo.CreateQuestionOptions(ctx, questionType.Options, question.ID, tx)
+	if err != nil {
+		tx.Rollback()
+		return domain.Question{}, err
+	}
+	tx.Commit()
+	updatedQuestion.Options = options
+	return *domain.TypeToDomainMapper(*updatedQuestion, survey.UUID), nil
 }
 
 func (qs *questionService) validateUserInputsExistence(ctx context.Context, question domain.Question, surveyID uint) error {

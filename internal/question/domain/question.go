@@ -19,12 +19,13 @@ type Question struct {
 
 type QuestionOption struct {
 	OptionText string
+	NextQuestionID *uint
 }
 
 func TypeToDomainMapper(question types.Question, surveyUUID uuid.UUID) *Question {
 	var questions []QuestionOption
 	for _, option := range question.Options {
-		questions = append(questions, QuestionOption{OptionText: option.OptionText})
+		questions = append(questions, QuestionOption{OptionText: option.OptionText, NextQuestionID: option.NextQuestionID})
 	}
 	return &Question{
 		ID:                    question.ID,
@@ -42,7 +43,7 @@ func TypeToDomainMapper(question types.Question, surveyUUID uuid.UUID) *Question
 func DomainToTypeMapper(question Question, surveyID uint) types.Question {
 	var questions []types.QuestionOption
 	for _, option := range question.QuestionOptions {
-		questions = append(questions, types.QuestionOption{OptionText: option.OptionText})
+		questions = append(questions, types.QuestionOption{OptionText: option.OptionText, NextQuestionID: option.NextQuestionID})
 	}
 	return types.Question{
 		SurveyID:              surveyID,

@@ -19,7 +19,7 @@ type QuestionOption struct {
 	gorm.Model
 	QuestionID uint
 	OptionText string
-	IsCorrect  bool
+	NextQuestionID *uint
 }
 
 type QuestionType string
