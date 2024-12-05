@@ -47,7 +47,6 @@ func (r *userRepo) GetByEmail(ctx context.Context, email domain.Email) (*domain.
 	err := r.db.Table("users").
 		Where("email = ?", email).
 		First(&user).Error
-	print(user.PasswordHash)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
