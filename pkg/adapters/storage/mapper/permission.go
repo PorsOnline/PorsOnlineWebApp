@@ -9,9 +9,9 @@ import (
 
 func PermissionDomain2Storage(permissionDomain domain.Permission) *types.Permission {
 	var users []types.User
-	// for _, user := range permissionDomain.Users {
-	// 	users = append(users, types.User{FirstName: user.FirstName, RoleID: uint(user.Role.ID), Permissions: user.Permissions})
-	// }
+	for _, user := range permissionDomain.Users {
+		users = append(users, *UserDomain2Storage(user))
+	}
 
 	return &types.Permission{
 		Model: gorm.Model{
@@ -25,15 +25,16 @@ func PermissionDomain2Storage(permissionDomain domain.Permission) *types.Permiss
 		Resource: permissionDomain.Resource,
 		Scope:    permissionDomain.Scope,
 		Policy:   uint8(permissionDomain.Policy),
+		Duration: permissionDomain.Duration,
 		Users:    users,
 	}
 }
 
 func PermissionStorage2Domain(permission types.Permission) *domain.Permission {
 	var users []domain.User
-	// for _, user := range permission.Users {
-	// 	users = append(users, domain.User{ID: domain.UserID(user.ID), Role: user.Role, Permissions: user.Permissions})
-	// }
+	for _, user := range permission.Users {
+		users = append(users, *UserStorage2Domain(user))
+	}
 
 	return &domain.Permission{
 		ID:        domain.PermissionID(permission.ID),
@@ -44,6 +45,7 @@ func PermissionStorage2Domain(permission types.Permission) *domain.Permission {
 		Resource:  permission.Resource,
 		Scope:     permission.Scope,
 		Policy:    domain.TypePolicy(permission.Policy),
+		Duration:  permission.Duration,
 		Users:     users,
 	}
 }

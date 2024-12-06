@@ -8,6 +8,11 @@ import (
 )
 
 func UserDomain2Storage(userDomain domain.User) *types.User {
+	var userPermissions []types.Permission
+	for _, permission := range userDomain.Permissions {
+		userPermissions = append(userPermissions, *PermissionDomain2Storage(permission))
+	}
+
 	return &types.User{
 		Model: gorm.Model{
 			ID:        uint(userDomain.ID),
@@ -26,10 +31,18 @@ func UserDomain2Storage(userDomain domain.User) *types.User {
 		Gender:            userDomain.Gender,
 		SurveyLimitNumber: userDomain.SurveyLimitNumber,
 		Balance:           userDomain.Balance,
+		Role:              *RoleDomain2Storage(userDomain.Role),
+		RoleID:            uint(userDomain.Role.ID),
+		Permissions:       userPermissions,
 	}
 }
 
 func UserStorage2Domain(user types.User) *domain.User {
+	var userPermissions []domain.Permission
+	for _, permission := range user.Permissions {
+		userPermissions = append(userPermissions, *PermissionStorage2Domain(permission))
+	}
+
 	return &domain.User{
 		ID:        domain.UserID(user.ID),
 		CreatedAt: user.CreatedAt,
@@ -46,5 +59,7 @@ func UserStorage2Domain(user types.User) *domain.User {
 		Gender:            user.Gender,
 		SurveyLimitNumber: user.SurveyLimitNumber,
 		Balance:           user.Balance,
+		Role:              *RoleStorage2Domain(user.Role),
+		Permissions:       userPermissions,
 	}
 }
