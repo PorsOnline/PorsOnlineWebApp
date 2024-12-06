@@ -19,12 +19,14 @@ import (
 )
 
 type app struct {
-	db           *gorm.DB
-	cfg          config.Config
-	userService  userPort.Service
-	notifService notifPort.Service
-	surveyService surveyPort.Service
-	questionService questionPort.Service
+	db                *gorm.DB
+	cfg               config.Config
+	userService       userPort.Service
+	notifService      notifPort.Service
+	surveyService     surveyPort.Service
+	questionService   questionPort.Service
+	roleService       userPort.RoleService
+	permissionService userPort.PermissionService
 }
 
 func (a *app) UserService() userPort.Service {
@@ -41,6 +43,14 @@ func (a *app) SurveyService() surveyPort.Service {
 
 func (a *app) QuestionService() questionPort.Service {
 	return a.questionService
+}
+
+func (a *app) RoleService() userPort.RoleService {
+	return a.roleService
+}
+
+func (a *app) PermissionService() userPort.PermissionService {
+	return a.permissionService
 }
 
 func (a *app) Config() config.Config {
@@ -76,6 +86,10 @@ func NewApp(cfg config.Config) (App, error) {
 	}
 
 	a.userService = user.NewService(storage.NewUserRepo(a.db))
+
+	a.roleService = user.NewRoleService(storage.NewRoleRepo(a.db))
+
+	a.permissionService = user.NewPermissionService(storage.NewPermissionRepo(a.db))
 
 	a.notifService = notification.NewService(storage.NewNotifRepo(a.db))
 
