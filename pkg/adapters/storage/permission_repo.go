@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/porseOnline/internal/user/domain"
 	"github.com/porseOnline/internal/user/port"
@@ -137,7 +138,10 @@ func (r *permissionRepo) Validate(ctx context.Context, userID domain.UserID, res
 
 	valid := false
 	for _, foundPerm := range user.Permissions {
-		if foundPerm.Resource == resource && foundPerm.Scope == scope && foundPerm.Group == group {
+		if foundPerm.Owner == user.ID {
+			valid = true
+			break
+		} else if foundPerm.Resource == resource && foundPerm.Scope == scope && foundPerm.Group == group && foundPerm.CreatedAt.Add(foundPerm.Duration).Before(time.Now()) {
 			valid = true
 			break
 		}
