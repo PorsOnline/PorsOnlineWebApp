@@ -8,6 +8,8 @@ import (
 	surveyPort "github.com/porseOnline/internal/survey/port"
 	"github.com/porseOnline/internal/user"
 	userPort "github.com/porseOnline/internal/user/port"
+	"github.com/porseOnline/internal/voting"
+	votingPort "github.com/porseOnline/internal/voting/port"
 	"github.com/porseOnline/pkg/adapters/storage"
 	"github.com/porseOnline/pkg/postgres"
 
@@ -26,6 +28,7 @@ type app struct {
 	notifService    notifPort.Service
 	surveyService   surveyPort.Service
 	questionService questionPort.Service
+	votingService   votingPort.Service
 }
 
 func (a *app) UserService() userPort.Service {
@@ -42,6 +45,10 @@ func (a *app) SurveyService() surveyPort.Service {
 
 func (a *app) QuestionService() questionPort.Service {
 	return a.questionService
+}
+
+func (a *app) VotingService() votingPort.Service{
+	return a.votingService
 }
 
 func (a *app) Config() config.Config {
@@ -100,6 +107,8 @@ func NewApp(cfg config.Config) (App, error) {
 	a.surveyService = survey.NewService(storage.NewSurveyRepo(a.db))
 
 	a.questionService = question.NewService(storage.NewQuestionRepo(a.db), a.surveyService)
+
+	a.votingService = voting.NewVotingService(storage.NewVotingRepo(a.db, a.secretsDB))
 
 	return a, nil
 }
