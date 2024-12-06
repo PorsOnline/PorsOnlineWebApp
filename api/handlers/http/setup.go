@@ -40,6 +40,7 @@ func Run(appContainer app.App, config config.Config) error {
 	}))
 	surveyService := service.NewService(appContainer.SurveyService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	surveyApi := app.Group("api/v1/survey")
+	surveyApi.Use(newAuthMiddleware([]byte(config.Server.Secret)))
 	surveyApi.Post("", CreateSurvey(surveyService))
 	surveyApi.Get(":uuid", GetSurvey(surveyService))
 	surveyApi.Put("", UpdateSurvey(surveyService))
