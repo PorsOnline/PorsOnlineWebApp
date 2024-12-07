@@ -81,7 +81,7 @@ func Run(appContainer app.App, config config.Config) error {
 	permissionApi.Get("/permission/:id", GetPermissionByID(permissionService))
 	permissionApi.Put("/permission", UpdatePermission(permissionService))
 	permissionApi.Delete("/permission/:id", DeletePermission(permissionService))
-	permissionApi.Get("/permission/:userId/validate", ValidateUserPermission(permissionService))
+	permissionApi.Patch("/permission/:userId/validate", ValidateUserPermission(permissionService))
 	permissionApi.Patch("/permission/:permissionId/assign/:userId", AssignPermissionToUser(permissionService))
 
 	return app.Listen(fmt.Sprintf(":%d", config.Server.HttpPort))

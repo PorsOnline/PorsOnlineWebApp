@@ -117,10 +117,15 @@ func ValidateUserPermission(svc *service.PermissionService) fiber.Handler {
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
-		_, err = svc.ValidateUserPermission(c.UserContext(), domain.UserID(userId), req.Resource, req.Scope, req.Group)
+		valid, err := svc.ValidateUserPermission(c.UserContext(), domain.UserID(userId), req.Resource, req.Scope, req.Group)
 		if err != nil {
 			logger.Error("error in validating user permission", nil)
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		}
+
+		if !valid {
+			logger.Error("user do not have access to this resource", nil)
+			return fiber.NewError(fiber.StatusNotAcceptable, "Forbidden")
 		}
 		logger.Info("validate user permission successfully", nil)
 		return nil

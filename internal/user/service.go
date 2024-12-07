@@ -230,5 +230,5 @@ func (ps *permissionService) ValidateUserPermission(ctx context.Context, userID 
 		return valid, err
 	}
 	logger.Info("successful validation on user access", nil)
-	return true, nil
+	return valid, nil
 }
