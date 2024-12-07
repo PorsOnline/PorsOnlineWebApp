@@ -30,6 +30,13 @@ type UserQuestionStep struct {
 	Action     Action
 }
 
+type QuestionAnswer struct {
+	gorm.Model
+	UserID     uint
+	QuestionID uint
+	Answer     string
+}
+
 type QuestionType string
 
 const (

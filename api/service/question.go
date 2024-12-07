@@ -34,8 +34,8 @@ func (q *QuestionService) DeleteQuestion(ctx context.Context, id uint) (error) {
 	return q.srv.DeleteQuestion(ctx, id)
 }
 
-func (q *QuestionService) GetNextQuestion(ctx context.Context, questionStep domain.UserQuestionStep) (*domain.Question, error) {
-	return q.srv.GetNextQuestion(ctx, questionStep)
+func (q *QuestionService) GetNextQuestion(ctx context.Context, questionStep domain.UserQuestionStep, userID uint) (*domain.Question, error) {
+	return q.srv.GetNextQuestion(ctx, questionStep, userID)
 }
 
 func (q *QuestionService) UpdateQuestion(ctx context.Context, question *domain.Question) (domain.Question, error) {

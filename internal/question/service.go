@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 
 	"github.com/porseOnline/internal/question/domain"
 	questionPort "github.com/porseOnline/internal/question/port"
@@ -130,7 +129,7 @@ func (qs *questionService) validateUserInputsExistence(ctx context.Context, ques
 	return nil
 }
 
-func (qs questionService) GetNextQuestion(ctx context.Context, userQuestionStep domain.UserQuestionStep) (*domain.Question, error) {
+func (qs questionService) GetNextQuestion(ctx context.Context, userQuestionStep domain.UserQuestionStep, userID uint) (*domain.Question, error) {
 	survey, err := qs.surveyService.GetSurveyByUUID(ctx, userQuestionStep.SurveyUUID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -139,8 +138,7 @@ func (qs questionService) GetNextQuestion(ctx context.Context, userQuestionStep 
 		return &domain.Question{}, err
 	}
 	questionStep := domain.QuestionStepDomainToType(userQuestionStep, survey.ID)
-	userID, err := strconv.Atoi(ctx.Value("UserID").(string))
-	questionStep.UserID = uint(userID)
+	questionStep.UserID = userID
 	currentStep, err := qs.questionRepo.GetCurrentQuestion(ctx, *questionStep)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		question, err := qs.questionRepo.GetFirstQuestion(ctx, survey.ID)
@@ -156,7 +154,7 @@ func (qs questionService) GetNextQuestion(ctx context.Context, userQuestionStep 
 		return &domain.Question{}, err
 	}
 	if currentStep.QuestionID != questionStep.QuestionID {
-		return &domain.Question{}, errors.New("not current step")
+		return &domain.Question{}, errors.New("invalid current step")
 	}
 	if questionStep.Action == types.Forward {
 		nextQuestionID, err := qs.questionRepo.GetNextQuestionByCondition(ctx, *currentStep)

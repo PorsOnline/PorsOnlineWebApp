@@ -90,7 +90,8 @@ func GetQuestion(svc *service.QuestionService) fiber.Handler {
 		if err := c.BodyParser(&req); err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
-		resp, err := svc.GetNextQuestion(ctx, req)
+		userID, err := strconv.Atoi(ctx.Value("UserID").(string))
+		resp, err := svc.GetNextQuestion(ctx, req, uint(userID))
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
