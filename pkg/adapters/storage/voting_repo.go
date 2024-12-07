@@ -2,9 +2,10 @@ package storage
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 
-	"github.com/google/uuid"
 	"github.com/porseOnline/internal/voting/domain"
 	votingPort "github.com/porseOnline/internal/voting/port"
 	"github.com/porseOnline/pkg/adapters/storage/types"
@@ -32,8 +33,7 @@ func (su *submitRepo) Vote(ctx context.Context, answer *domain.Vote) error {
 	}
 
 	var oldSecret types.Secrets
-	var key string
-
+	var randomBytes []byte
 	err := su.secretDB.Table("secrets").
 		WithContext(ctx).
 		Where("user_id = ? AND servey_id = ?", answer.UserID, answer.SurveyID).
@@ -43,32 +43,40 @@ func (su *submitRepo) Vote(ctx context.Context, answer *domain.Vote) error {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
+		randomBytes = make([]byte, 16)
 
-		key = uuid.Must(uuid.NewUUID()).String()
+		// Read random bytes into the slice
+		_, err := rand.Read(randomBytes)
+		if err != nil {
+			return err
+		}
+		// key := hex.EncodeToString(randomBytes)
+
 		secret := types.Secrets{
 			UserID:   answer.UserID,
 			ServeyID: answer.SurveyID,
-			Secret:   key,
+			Secret:   hex.EncodeToString(randomBytes),
 		}
 
 		if err := su.secretDB.Table("secrets").WithContext(ctx).Create(&secret).Error; err != nil {
 			return err
 		}
 	} else {
-		key = oldSecret.Secret
+		randomBytes, _ = hex.DecodeString(oldSecret.Secret)
 	}
 
 	if answer.TextResponse != "" {
-		cipherText, err := helper.EncryptAES(answer.TextResponse, []byte(key))
+		cipherText, err := helper.EncryptAES(answer.TextResponse, randomBytes)
 		if err != nil {
 			logger.Error("failed to encrypt text response", nil)
+
 			return err
 		}
 		answer.TextResponse = cipherText
 	}
 
 	if answer.SelectedOption != "" {
-		cipherText, err := helper.EncryptAES(answer.SelectedOption, []byte(key))
+		cipherText, err := helper.EncryptAES(answer.SelectedOption, randomBytes)
 		if err != nil {
 			logger.Error("failed to encrypt selected option", nil)
 			return err
