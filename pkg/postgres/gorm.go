@@ -33,6 +33,7 @@ func GormMigrations(db *gorm.DB) {
 		&types.Notification{},
 		&types.User{},
 		&types.CodeVerification{},
+		&types.Vote{},
 	)
 }
 

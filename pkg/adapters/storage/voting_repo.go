@@ -8,6 +8,7 @@ import (
 
 	"github.com/porseOnline/internal/voting/domain"
 	votingPort "github.com/porseOnline/internal/voting/port"
+	"github.com/porseOnline/pkg/adapters/storage/mapper"
 	"github.com/porseOnline/pkg/adapters/storage/types"
 	"github.com/porseOnline/pkg/helper"
 	"github.com/porseOnline/pkg/logger"
@@ -31,12 +32,13 @@ func (su *submitRepo) Vote(ctx context.Context, answer *domain.Vote) error {
 	if answer == nil {
 		return errors.New("vote answer cannot be nil")
 	}
+	storageAnswer := mapper.VotingDomain2Storage(*answer)
 
 	var oldSecret types.Secrets
 	var randomBytes []byte
 	err := su.secretDB.Table("secrets").
 		WithContext(ctx).
-		Where("user_id = ? AND servey_id = ?", answer.UserID, answer.SurveyID).
+		Where("user_id = ? AND servey_id = ?", storageAnswer.UserID, storageAnswer.SurveyID).
 		First(&oldSecret).Error
 
 	if err != nil {
@@ -53,8 +55,8 @@ func (su *submitRepo) Vote(ctx context.Context, answer *domain.Vote) error {
 		// key := hex.EncodeToString(randomBytes)
 
 		secret := types.Secrets{
-			UserID:   answer.UserID,
-			ServeyID: answer.SurveyID,
+			UserID:   storageAnswer.UserID,
+			ServeyID: storageAnswer.SurveyID,
 			Secret:   hex.EncodeToString(randomBytes),
 		}
 
@@ -65,26 +67,25 @@ func (su *submitRepo) Vote(ctx context.Context, answer *domain.Vote) error {
 		randomBytes, _ = hex.DecodeString(oldSecret.Secret)
 	}
 
-	if answer.TextResponse != "" {
-		cipherText, err := helper.EncryptAES(answer.TextResponse, randomBytes)
+	if storageAnswer.TextResponse != "" {
+		cipherText, err := helper.EncryptAES(storageAnswer.TextResponse, randomBytes)
 		if err != nil {
 			logger.Error("failed to encrypt text response", nil)
 
 			return err
 		}
-		answer.TextResponse = cipherText
+		storageAnswer.TextResponse = cipherText
 	}
 
-	if answer.SelectedOption != "" {
-		cipherText, err := helper.EncryptAES(answer.SelectedOption, randomBytes)
+	if storageAnswer.SelectedOption != "" {
+		cipherText, err := helper.EncryptAES(storageAnswer.SelectedOption, randomBytes)
 		if err != nil {
 			logger.Error("failed to encrypt selected option", nil)
 			return err
 		}
-		answer.SelectedOption = cipherText
+		storageAnswer.SelectedOption = cipherText
 	}
-
-	if err := su.db.Table("votes").WithContext(ctx).Create(answer).Error; err != nil {
+	if err := su.db.Table("votes").WithContext(ctx).Create(storageAnswer).Error; err != nil {
 		return err
 	}
 
