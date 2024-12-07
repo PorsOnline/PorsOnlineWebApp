@@ -9,8 +9,10 @@ import (
 
 func UserDomain2Storage(userDomain domain.User) *types.User {
 	var userPermissions []types.Permission
-	for _, permission := range userDomain.Permissions {
-		userPermissions = append(userPermissions, *PermissionDomain2Storage(permission))
+	if len(userDomain.Permissions) > 0 {
+		for _, permission := range userDomain.Permissions {
+			userPermissions = append(userPermissions, *PermissionDomain2Storage(permission))
+		}
 	}
 
 	return &types.User{
@@ -39,8 +41,10 @@ func UserDomain2Storage(userDomain domain.User) *types.User {
 
 func UserStorage2Domain(user types.User) *domain.User {
 	var userPermissions []domain.Permission
-	for _, permission := range user.Permissions {
-		userPermissions = append(userPermissions, *PermissionStorage2Domain(permission))
+	if len(user.Permissions) > 0 {
+		for _, permission := range user.Permissions {
+			userPermissions = append(userPermissions, *PermissionStorage2Domain(permission))
+		}
 	}
 
 	return &domain.User{
