@@ -1,6 +1,8 @@
 package types
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+)
 
 type Question struct {
 	gorm.Model
@@ -20,11 +22,26 @@ type QuestionOption struct {
 	NextQuestionID *uint
 }
 
+type UserQuestionStep struct {
+	gorm.Model
+	SurveyID   uint
+	UserID     uint
+	QuestionID uint
+	Action     Action
+}
+
 type QuestionType string
 
 const (
-	ConditionalMultipleChoice           QuestionType = "ConditionalMultipleChoice"
-	MultipleChoice                      QuestionType = "MultipleChoice"
-	MultipleChoiceWithAnswer            QuestionType = "MultipleChoiceWithAnswer"
-	Descriptive                         QuestionType = "Descriptive"
+	ConditionalMultipleChoice QuestionType = "ConditionalMultipleChoice"
+	MultipleChoice            QuestionType = "MultipleChoice"
+	MultipleChoiceWithAnswer  QuestionType = "MultipleChoiceWithAnswer"
+	Descriptive               QuestionType = "Descriptive"
+)
+
+type Action string
+
+const (
+	Forward  Action = "forward"
+	Backward Action = "backward"
 )

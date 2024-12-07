@@ -39,9 +39,11 @@ func Run(appContainer app.App, config config.Config) error {
 		},
 	}))
 	surveyService := service.NewService(appContainer.SurveyService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
+	questionService := service.NewQuestionService(appContainer.QuestionService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	surveyApi := app.Group("api/v1/survey")
 	surveyApi.Use(newAuthMiddleware([]byte(config.Server.Secret)))
 	surveyApi.Post("", CreateSurvey(surveyService))
+	surveyApi.Get("/question", GetQuestion(questionService))
 	surveyApi.Get(":uuid", GetSurvey(surveyService))
 	surveyApi.Put("", UpdateSurvey(surveyService))
 	surveyApi.Post("cancel/:uuid", CancelSurvey(surveyService))
@@ -62,7 +64,6 @@ func Run(appContainer app.App, config config.Config) error {
 	api.Post("/send_message", SendMessage(notifService))
 	api.Get("/unread-messages/:user_id", GetUnreadMessages(notifService))
 
-	questionService := service.NewQuestionService(appContainer.QuestionService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	surveyApi.Post("/question", CreateQuestion(questionService))
 	surveyApi.Delete("/question/:id", DeleteQuestion(questionService))
 	surveyApi.Put("/question", UpdateQuestion(questionService))

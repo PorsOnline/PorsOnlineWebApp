@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/porseOnline/internal/question/domain"
 	questionPort "github.com/porseOnline/internal/question/port"
@@ -13,7 +14,7 @@ import (
 )
 
 type questionService struct {
-	questionRepo questionPort.Repo
+	questionRepo  questionPort.Repo
 	surveyService surveyPort.Service
 }
 
@@ -57,7 +58,7 @@ func (qs *questionService) CreateQuestion(ctx context.Context, question domain.Q
 	return *domain.TypeToDomainMapper(*createdQuestion, survey.UUID), nil
 }
 
-func (qs *questionService) DeleteQuestion(ctx context.Context, id uint) (error) {
+func (qs *questionService) DeleteQuestion(ctx context.Context, id uint) error {
 	err := qs.questionRepo.Delete(ctx, id)
 	if err != nil {
 		return err
@@ -65,7 +66,7 @@ func (qs *questionService) DeleteQuestion(ctx context.Context, id uint) (error) 
 	return nil
 }
 
-func (qs *questionService) GetQuestion(ctx context.Context, id uint) (*domain.Question, error) {
+func (qs *questionService) GetQuestionByID(ctx context.Context, id uint) (*domain.Question, error) {
 	question, err := qs.questionRepo.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -127,4 +128,65 @@ func (qs *questionService) validateUserInputsExistence(ctx context.Context, ques
 		}
 	}
 	return nil
+}
+
+func (qs questionService) GetNextQuestion(ctx context.Context, userQuestionStep domain.UserQuestionStep) (*domain.Question, error) {
+	survey, err := qs.surveyService.GetSurveyByUUID(ctx, userQuestionStep.SurveyUUID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &domain.Question{}, errors.New("survey not found")
+		}
+		return &domain.Question{}, err
+	}
+	questionStep := domain.QuestionStepDomainToType(userQuestionStep, survey.ID)
+	userID, err := strconv.Atoi(ctx.Value("UserID").(string))
+	questionStep.UserID = uint(userID)
+	currentStep, err := qs.questionRepo.GetCurrentQuestion(ctx, *questionStep)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		question, err := qs.questionRepo.GetFirstQuestion(ctx, survey.ID)
+		if err != nil {
+			return &domain.Question{}, err
+		}
+		err = qs.questionRepo.CreateQuestionStep(ctx, types.UserQuestionStep{SurveyID: survey.ID, QuestionID: question.ID, UserID: uint(userID)})
+		if err != nil {
+			return &domain.Question{}, err
+		}
+		return domain.TypeToDomainMapper(*question, survey.UUID), nil
+	} else if err != nil {
+		return &domain.Question{}, err
+	}
+	if currentStep.QuestionID != questionStep.QuestionID {
+		return &domain.Question{}, errors.New("not current step")
+	}
+	if questionStep.Action == types.Forward {
+		nextQuestionID, err := qs.questionRepo.GetNextQuestionByCondition(ctx, *currentStep)
+		if err != nil {
+			return &domain.Question{}, err
+		}
+		if nextQuestionID == nil {
+			nextQuestionID, err = qs.questionRepo.GetNextQuestionByOrder(ctx, *currentStep)
+			if err != nil {
+				return &domain.Question{}, err
+			}
+		}
+
+		question, err := qs.questionRepo.Get(ctx, *nextQuestionID)
+		err = qs.questionRepo.CreateQuestionStep(ctx, types.UserQuestionStep{SurveyID: survey.ID, QuestionID: question.ID, UserID: uint(userID), Action: questionStep.Action})
+		if err != nil {
+			return &domain.Question{}, err
+		}
+		return domain.TypeToDomainMapper(*question, survey.UUID), nil
+
+	}
+	previousQuestionID, err := qs.questionRepo.GetPreviousQuestion(ctx, *currentStep)
+	if err != nil {
+		return &domain.Question{}, err
+	}
+	question, err := qs.questionRepo.Get(ctx, *previousQuestionID)
+	err = qs.questionRepo.CreateQuestionStep(ctx, types.UserQuestionStep{SurveyID: survey.ID, QuestionID: question.ID, UserID: uint(userID), Action: questionStep.Action})
+	if err != nil {
+		return &domain.Question{}, err
+	}
+	return domain.TypeToDomainMapper(*question, survey.UUID), nil
+
 }
