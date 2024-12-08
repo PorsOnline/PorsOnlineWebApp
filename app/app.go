@@ -31,6 +31,8 @@ type app struct {
 	codeVrfctnService codeVerificationPort.Service
 }
 
+// CodeVerificationService implements App.
+
 func (a *app) DB() *gorm.DB {
 	return a.db
 }
@@ -84,7 +86,7 @@ func (a *app) codeVerificationServiceWithDB(db *gorm.DB) codeVerificationPort.Se
 		a.userService, storage.NewOutboxRepo(db), storage.NewCodeVerificationRepo(db))
 }
 
-func (a *app) codeVerificationService(ctx context.Context) codeVerificationPort.Service {
+func (a *app) CodeVerificationService(ctx context.Context) codeVerificationPort.Service {
 	db := appCtx.GetDB(ctx)
 	if db == nil {
 		if a.codeVrfctnService == nil {
@@ -109,6 +111,7 @@ func (a *app) setDB() error {
 		DBName: a.cfg.DB.Database,
 		Schema: a.cfg.DB.Schema,
 	})
+
 	postgres.GormMigrations(db)
 
 	if err != nil {
