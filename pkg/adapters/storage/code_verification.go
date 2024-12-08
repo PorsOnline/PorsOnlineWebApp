@@ -25,7 +25,8 @@ func NewCodeVerificationRepo(db *gorm.DB) port.Repo {
 
 func (r *CodeVerificationRepo) Create(ctx context.Context, codeverification *domain.CodeVerification) (domain.CodeVerificationID, error) {
 	no := mapper.CodeVerification2Storage(codeverification)
-	if err := r.db.WithContext(ctx).Table("code_verifiations").Create(no).Error; err != nil {
+
+	if err := r.db.WithContext(ctx).Table("code_verifications").Create(no).Error; err != nil {
 		return 0, err
 	}
 
@@ -37,7 +38,6 @@ func (r *CodeVerificationRepo) CreateOutbox(ctx context.Context, no *domain.Code
 	if err != nil {
 		return err
 	}
-
 	return r.db.WithContext(ctx).Table("outboxes").Create(outbox).Error
 }
 
@@ -48,7 +48,6 @@ func (r *CodeVerificationRepo) QueryOutboxes(ctx context.Context, limit uint, st
 		Where(`"type" = ?`, common.OutboxTypeCodeVerification).
 		Where("status = ?", status).
 		Limit(int(limit)).Scan(&outboxes).Error
-
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -70,8 +69,18 @@ func (r *CodeVerificationRepo) QueryOutboxes(ctx context.Context, limit uint, st
 }
 
 func (r *CodeVerificationRepo) GetUserCodeVerificationValue(ctx context.Context, userID userDomain.UserID) (string, error) {
-	// v, err := r.db.WithContext(ctx).Table("outboxes").
-	// 	Where(`"type" = ?`, common.OutboxTypeCodeVerification).
-	// return conv.ToStr(v), err
-	return "", nil
+	var code string
+	err := r.db.WithContext(ctx).
+		Table("code_verifications").
+		Select("content").         // Get "content" from the table
+		Where(`"to" = ?`, userID). // Use simple column name
+		Scan(&code).Error
+
+	// Check if the error is "record not found"
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return "", nil // Return an empty value instead of an error
+	}
+
+	return code, err
+
 }
