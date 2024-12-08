@@ -141,9 +141,11 @@ func (r *permissionRepo) Validate(ctx context.Context, userID domain.UserID, res
 		if foundPerm.Owner == user.ID {
 			valid = true
 			break
-		} else if foundPerm.Resource == resource && foundPerm.Scope == scope && foundPerm.Group == group && foundPerm.CreatedAt.Add(foundPerm.Duration).Before(time.Now()) {
+		} else if user.Role.AccessLevel == 1 && foundPerm.Resource == resource && foundPerm.Scope == scope && foundPerm.Group == group && foundPerm.CreatedAt.Add(foundPerm.Duration).Before(time.Now()) {
 			valid = true
 			break
+		} else if user.Role.AccessLevel > 1 {
+			valid = foundPerm.Policy <= 3
 		}
 	}
 
