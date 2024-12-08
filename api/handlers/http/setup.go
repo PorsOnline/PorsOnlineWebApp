@@ -84,5 +84,9 @@ func Run(appContainer app.App, config config.Config) error {
 	permissionApi.Patch("/permission/:userId/validate", ValidateUserPermission(permissionService))
 	permissionApi.Patch("/permission/:permissionId/assign/:userId", AssignPermissionToUser(permissionService))
 
+  votingApi := app.Group("api/v1/vote")
+	votingService := service.NewVotingService(appContainer.VotingService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
+	votingApi.Post("", Vote(votingService))
+
 	return app.Listen(fmt.Sprintf(":%d", config.Server.HttpPort))
 }

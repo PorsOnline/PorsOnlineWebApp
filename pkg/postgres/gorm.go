@@ -33,5 +33,12 @@ func GormMigrations(db *gorm.DB) {
 		&types.Notification{},
 		&types.User{},
 		&types.CodeVerification{},
+		&types.Vote{},
+	)
+}
+
+func GormSecretsMigration(db *gorm.DB) {
+	db.AutoMigrate(
+		&types.Secrets{},
 	)
 }
