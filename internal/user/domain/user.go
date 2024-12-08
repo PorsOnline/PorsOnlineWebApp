@@ -13,6 +13,10 @@ type (
 	Email        string
 	NationalCode string
 )
+type UserFilter struct {
+	ID    UserID
+	Phone string
+}
 
 func (p Phone) IsValid() bool {
 	// Define the regex pattern for Iranian mobile numbers
