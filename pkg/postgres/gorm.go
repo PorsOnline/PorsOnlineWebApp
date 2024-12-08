@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/porseOnline/pkg/adapters/storage/types"
 	"gorm.io/driver/postgres"
@@ -29,9 +30,14 @@ func NewPsqlGormConnection(opt DBConnOptions) (*gorm.DB, error) {
 	})
 }
 func GormMigrations(db *gorm.DB) {
-	db.AutoMigrate(
+	err := db.AutoMigrate(
 		&types.Notification{},
 		&types.User{},
 		&types.CodeVerification{},
+		&types.Outbox{},
+		&types.CodeVerificationOutbox{},
 	)
+	if err != nil {
+		log.Fatalf("failed to migrate models: %v", err)
+	}
 }
