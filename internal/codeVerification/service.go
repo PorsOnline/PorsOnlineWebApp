@@ -12,6 +12,7 @@ import (
 	userPort "github.com/porseOnline/internal/user/port"
 
 	"github.com/porseOnline/pkg/fp"
+	"github.com/porseOnline/pkg/helper"
 )
 
 type Service struct {
@@ -42,8 +43,7 @@ func (s *Service) Send(ctx context.Context, codeVerification *domain.CodeVerific
 	if err != nil {
 		return err
 	}
-
-	return s.codeVerificationRepo.CreateOutbox(ctx, &domain.CodeVerificationOutbox{
+	err = s.codeVerificationRepo.CreateOutbox(ctx, &domain.CodeVerificationOutbox{
 		CodeVerificationID: codeVerificationID,
 		Data: domain.OutboxData{
 			Dest: func() string {
@@ -62,6 +62,12 @@ func (s *Service) Send(ctx context.Context, codeVerification *domain.CodeVerific
 		Status: common.OutboxStatusCreated,
 		Type:   common.OutboxTypeCodeVerification,
 	})
+	if err != nil {
+		return err
+	}
+	/////////
+
+	return nil
 }
 
 func (s *Service) Handle(ctx context.Context, outboxes []domain.CodeVerificationOutbox) error {
@@ -74,7 +80,10 @@ func (s *Service) Handle(ctx context.Context, outboxes []domain.CodeVerification
 	}
 
 	for _, outbox := range outboxes {
-		fmt.Printf("dest : %s, content : %s\n", outbox.Data.Dest, outbox.Data.Content)
+		// fmt.Printf("dest : %s, content : %s\n", outbox.Data.Dest, outbox.Data.Content)
+		print(outbox.Data.Content)
+		go helper.SendEmail(outbox.Data.Dest, outbox.Data.Content)
+
 	}
 
 	if err := s.outboxRepo.UpdateBulkStatuses(ctx, common.OutboxStatusDone, outBoxIDs...); err != nil {
@@ -97,6 +106,6 @@ func (s *Service) CheckUserCodeVerificationValue(ctx context.Context, userID use
 	if err != nil {
 		return false, err
 	}
-
+	fmt.Printf(" expected %s == val %s", expected, val)
 	return expected == val, nil
 }
