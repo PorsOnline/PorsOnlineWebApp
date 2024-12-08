@@ -80,7 +80,7 @@ func (s *UserService) SignUp(ctx context.Context, req *pb.UserSignUpFirstRequest
 	s.codeVerficationServise.Send(ctx, codeVerficationDomain.NewCodeVerification(userID, fmt.Sprint(code), codeVerficationDomain.CodeVerificationTypeEmail, true, time.Minute*2))
 
 	// go helper.SendEmail(req.GetEmail())
-	go helper.SendEmail(req.GetEmail(), code)
+	// go helper.SendEmail(req.GetEmail(), code)
 	response := &SignUpFirstResponseWrapper{
 		RequestTimestamp: time.Now().Unix(),
 		Data: &pb.UserSignUpFirstResponse{
@@ -96,36 +96,44 @@ func (s *UserService) SignUpCodeVerification(ctx context.Context, req *pb.UserSi
 	if err != nil {
 		return nil, err
 	}
-
-	accessToken, err := jwt.CreateToken([]byte(s.authSecret), &jwt.UserClaims{
-		RegisteredClaims: jwt2.RegisteredClaims{
-			ExpiresAt: jwt2.NewNumericDate(helperTime.AddMinutes(s.expMin, true)),
-		},
-		UserID: uint(req.GetUserId()),
-	})
+	ok, err := s.codeVerficationServise.CheckUserCodeVerificationValue(ctx, domain.UserID(req.GetUserId()), req.GetCode())
 	if err != nil {
 		return nil, err
 	}
+	if ok {
 
-	refreshToken, err := jwt.CreateToken([]byte(s.authSecret), &jwt.UserClaims{
-		RegisteredClaims: jwt2.RegisteredClaims{
-			ExpiresAt: jwt2.NewNumericDate(helperTime.AddMinutes(s.refreshExpMin, true)),
-		},
-		UserID: uint(req.GetUserId()),
-	})
+		accessToken, err := jwt.CreateToken([]byte(s.authSecret), &jwt.UserClaims{
+			RegisteredClaims: jwt2.RegisteredClaims{
+				ExpiresAt: jwt2.NewNumericDate(helperTime.AddMinutes(s.expMin, true)),
+			},
+			UserID: uint(req.GetUserId()),
+		})
+		if err != nil {
+			return nil, err
+		}
 
-	if err != nil {
-		return nil, err
+		refreshToken, err := jwt.CreateToken([]byte(s.authSecret), &jwt.UserClaims{
+			RegisteredClaims: jwt2.RegisteredClaims{
+				ExpiresAt: jwt2.NewNumericDate(helperTime.AddMinutes(s.refreshExpMin, true)),
+			},
+			UserID: uint(req.GetUserId()),
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		response := &SignUpSecondResponseWrapper{
+			RequestTimestamp: time.Now().Unix(), // Get current UNIX timestamp
+			Data: &pb.UserSignUpSecondResponse{
+				AccessToken:  accessToken,
+				RefreshToken: refreshToken,
+			},
+		}
+		return response, nil
+	} else {
+		return nil, nil
 	}
-
-	response := &SignUpSecondResponseWrapper{
-		RequestTimestamp: time.Now().Unix(), // Get current UNIX timestamp
-		Data: &pb.UserSignUpSecondResponse{
-			AccessToken:  accessToken,
-			RefreshToken: refreshToken,
-		},
-	}
-	return response, nil
 
 }
 func (s *UserService) SignIn(ctx context.Context, req *pb.UserSignInRequest) (*SignUpSecondResponseWrapper, error) {
