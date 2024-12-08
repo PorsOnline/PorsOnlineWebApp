@@ -68,3 +68,15 @@ func (s *service) GetUserByEmail(ctx context.Context, email domain.Email) (*doma
 
 	return user, nil
 }
+func (s *service) GetUserByFilter(ctx context.Context, filter *domain.UserFilter) (*domain.User, error) {
+	user, err := s.repo.GetByFilter(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if user == nil {
+		return nil, ErrUserNotFound
+	}
+
+	return user, nil
+}
