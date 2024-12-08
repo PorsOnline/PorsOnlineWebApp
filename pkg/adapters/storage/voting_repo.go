@@ -91,7 +91,7 @@ func (su *submitRepo) Vote(ctx context.Context, answer *domain.Vote) error {
 	return nil
 }
 
-func (su *submitRepo) GetLastAnswer(ctx context.Context, userID uint, surveyID uint) (domain.Vote, error) {
+func (su *submitRepo) GetLastResponse(ctx context.Context, userID uint, surveyID uint) (domain.Vote, error) {
 	var lastAnswer domain.Vote
 	var secret types.Secrets
 	err := su.secretDB.Table("secrets").Where("user_id = ? AND survey_id = ?", userID, surveyID).Find(&secret).Error
