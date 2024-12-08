@@ -108,8 +108,8 @@ func (r *roleRepo) Assign(ctx context.Context, roleID domain.RoleID, userID doma
 		return tx.Error
 	}
 
-	user.RoleID = role.ID
-	user.Role = role
+	user.RoleID = &role.ID
+	user.Role = &role
 	if err := tx.Model(&types.User{}).Where("id = ?", userID).Updates(user).Error; err != nil {
 		logger.Error(err.Error(), nil)
 		tx.Rollback()
