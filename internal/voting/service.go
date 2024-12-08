@@ -26,3 +26,11 @@ func (s *service) Vote(ctx context.Context, answer *domain.Vote) error {
 	}
 	return nil
 }
+
+func (s *service) GetLastResponse(ctx context.Context, userID uint, serveyID uint) (domain.Vote, error) {
+	lastAnswer, err := s.repo.GetLastResponse(ctx, userID, serveyID)
+	if err!=nil{
+		return domain.Vote{}, err
+	}
+	return lastAnswer, nil
+}
