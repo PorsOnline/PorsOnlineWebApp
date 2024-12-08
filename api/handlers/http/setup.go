@@ -66,7 +66,25 @@ func Run(appContainer app.App, config config.Config) error {
 	surveyApi.Delete("/question/:id", DeleteQuestion(questionService))
 	surveyApi.Put("/question", UpdateQuestion(questionService))
 
-	votingApi := app.Group("api/v1/vote")
+	roleService := service.NewRoleService(appContainer.RoleService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
+	roleApi := app.Group("api/v1")
+	roleApi.Post("/role", CreateRole(roleService))
+	roleApi.Get("/role/:id", GetRole(roleService))
+	roleApi.Put("/role", UpdateRole(roleService))
+	roleApi.Delete("/role/:id", DeleteRole(roleService))
+	roleApi.Patch("/role/:roleId/assign/:userId", AssignRoleToUser(roleService))
+
+	permissionService := service.NewPermissionService(appContainer.PermissionService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
+	permissionApi := app.Group("api/v1")
+	permissionApi.Post("/permission", CreatePermission(permissionService))
+	permissionApi.Get("/permissions/:id", GetUserPermissions(permissionService))
+	permissionApi.Get("/permission/:id", GetPermissionByID(permissionService))
+	permissionApi.Put("/permission", UpdatePermission(permissionService))
+	permissionApi.Delete("/permission/:id", DeletePermission(permissionService))
+	permissionApi.Patch("/permission/:userId/validate", ValidateUserPermission(permissionService))
+	permissionApi.Patch("/permission/:permissionId/assign/:userId", AssignPermissionToUser(permissionService))
+
+  votingApi := app.Group("api/v1/vote")
 	votingService := service.NewVotingService(appContainer.VotingService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	votingApi.Post("", Vote(votingService))
 

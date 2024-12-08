@@ -14,6 +14,8 @@ type App interface {
 	NotifService() notifPort.Service
 	SurveyService() surveyPort.Service
 	QuestionService() questionPort.Service
+	PermissionService() userPort.PermissionService
+	RoleService() userPort.RoleService
 	VotingService() votingPort.Service
 	Config() config.Config
 }

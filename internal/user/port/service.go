@@ -13,3 +13,21 @@ type Service interface {
 	UpdateUser(ctx context.Context, user domain.User) error
 	DeleteByID(ctx context.Context, userID domain.UserID) error
 }
+
+type RoleService interface {
+	CreateRole(ctx context.Context, role domain.Role) (domain.RoleID, error)
+	GetRole(ctx context.Context, roleID domain.RoleID) (*domain.Role, error)
+	UpdateRole(ctx context.Context, role domain.Role) error
+	DeleteRole(ctx context.Context, roleID domain.RoleID) error
+	AssignRoleToUser(ctx context.Context, roleID domain.RoleID, userID domain.UserID) error
+}
+
+type PermissionService interface {
+	CreatePermission(ctx context.Context, permission domain.Permission) (domain.PermissionID, error)
+	GetUserPermissions(ctx context.Context, userID domain.UserID) ([]domain.Permission, error)
+	GetPermissionByID(ctx context.Context, permissionID domain.PermissionID) (*domain.Permission, error)
+	UpdatePermission(ctx context.Context, permission domain.Permission) error
+	DeletePermission(ctx context.Context, permissionID domain.PermissionID) error
+	ValidateUserPermission(ctx context.Context, userID domain.UserID, resource, scope, group string) (bool, error)
+	AssignPermissionToUser(ctx context.Context, permissionID domain.PermissionID, userID domain.UserID) error
+}

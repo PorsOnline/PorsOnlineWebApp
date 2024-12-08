@@ -32,6 +32,8 @@ type User struct {
 	DeletedAt         time.Time
 	UpdatedAt         time.Time
 	Balance           int
+	Role              Role
+	Permissions       []Permission
 }
 
 func (u *User) Validate() error {

@@ -19,4 +19,7 @@ type User struct {
 	Gender            bool      `gorm:"column:gender"`
 	SurveyLimitNumber int       `gorm:"column:survey_limit_number;default:100"`
 	Balance           int       `gorm:"column:balance;default:100"`
+	RoleID            *uint
+	Role              *Role        `gorm:"foreignkey:RoleID"`
+	Permissions       []Permission `gorm:"many2many:user_permissions"`
 }
