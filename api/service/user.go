@@ -3,10 +3,13 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/porseOnline/api/pb"
+	codeVerficationDomain "github.com/porseOnline/internal/codeVerification/domain"
+	codeVerificationPort "github.com/porseOnline/internal/codeVerification/port"
 	"github.com/porseOnline/internal/user"
 	"github.com/porseOnline/internal/user/domain"
 	userPort "github.com/porseOnline/internal/user/port"
@@ -24,17 +27,19 @@ var (
 )
 
 type UserService struct {
-	svc                   userPort.Service
-	authSecret            string
-	expMin, refreshExpMin uint
+	svc                    userPort.Service
+	authSecret             string
+	expMin, refreshExpMin  uint
+	codeVerficationServise codeVerificationPort.Service
 }
 
-func NewUserService(svc userPort.Service, authSecret string, expMin, refreshExpMin uint) *UserService {
+func NewUserService(svc userPort.Service, authSecret string, expMin, refreshExpMin uint, codeVerificationSvc codeVerificationPort.Service) *UserService {
 	return &UserService{
-		svc:           svc,
-		authSecret:    authSecret,
-		expMin:        expMin,
-		refreshExpMin: refreshExpMin,
+		svc:                    svc,
+		authSecret:             authSecret,
+		expMin:                 expMin,
+		refreshExpMin:          refreshExpMin,
+		codeVerficationServise: codeVerificationSvc,
 	}
 }
 
@@ -69,8 +74,13 @@ func (s *UserService) SignUp(ctx context.Context, req *pb.UserSignUpFirstRequest
 	if err != nil {
 		return nil, err
 	}
+
+	code := strconv.Itoa(helper.GetRandomCode())
+
+	s.codeVerficationServise.Send(ctx, codeVerficationDomain.NewCodeVerification(userID, fmt.Sprint(code), codeVerficationDomain.CodeVerificationTypeEmail, true, time.Minute*2))
+
 	// go helper.SendEmail(req.GetEmail())
-	go helper.SendEmail(req.GetEmail(), strconv.Itoa(helper.GetRandomCode()))
+	go helper.SendEmail(req.GetEmail(), code)
 	response := &SignUpFirstResponseWrapper{
 		RequestTimestamp: time.Now().Unix(),
 		Data: &pb.UserSignUpFirstResponse{
