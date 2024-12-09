@@ -122,13 +122,13 @@ func (r *permissionRepo) GetAll(ctx context.Context, userID domain.UserID) (*[]d
 	return &permissions, nil
 }
 
-func (r *permissionRepo) Validate(ctx context.Context, userID domain.UserID, resource, scope, group string) (bool, error) {
+func (r *permissionRepo) Validate(ctx context.Context, userID domain.UserID, resource, scope, group string, surveyID uint) (bool, error) {
 	var userPermissionDetails types.UserPermission
 	err := r.db.Table("users u").
 		Joins("left join user_permissions up on u.id = up.user_id").
 		Joins("left join permissions p on p.id = up.permission_id").
 		Select("up.id", "up.duration", "up.created_at").
-		Where("u.id = ? and (? like replace(p.resource, ':id', '%') or ? like replace(p.resource, ':uuid', '%')) and p.scope = ?", userID, resource, resource, scope).
+		Where("u.id = ? and (? like replace(p.resource, ':id', '%') or ? like replace(p.resource, ':uuid', '%')) and (up.survey_id = ? or up.survey_id is null) and p.scope = ?", userID, resource, resource, surveyID, scope).
 		First(&userPermissionDetails).Error
 
 	if err != nil {
@@ -156,4 +156,18 @@ func (r *permissionRepo) Validate(ctx context.Context, userID domain.UserID, res
 	// 		valid = userPermission.Permission.Policy <= 3
 	// 	}
 	// }
+}
+
+func (r *permissionRepo) GetByResourceScope(ctx context.Context, resource, scope string) (bool, error) {
+	var permission types.Permission
+	err := r.db.Debug().Table("permissions").Where("resource = ? and scope = ?", permission, scope).WithContext(ctx).First(&permission).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
 }

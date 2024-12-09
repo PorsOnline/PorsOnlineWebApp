@@ -6,9 +6,9 @@ import (
 	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/porseOnline/pkg/jwt"
 	"github.com/porseOnline/api/service"
 	"github.com/porseOnline/internal/user/domain"
+	"github.com/porseOnline/pkg/jwt"
 )
 
 func TraceMiddleware() fiber.Handler {
@@ -51,7 +51,9 @@ func PermissionMiddleware(permissionService *service.PermissionService) fiber.Ha
 		if err != nil {
 			return fiber.NewError(fiber.StatusUnauthorized, err.Error())
 		}
-		valid, err := permissionService.ValidateUserPermission(c.UserContext(), domain.UserID(userID), c.Path(), method2ScopeMapper(c.Route().Method), "")
+		surveyID := c.Params("surveyID")
+		
+		valid, err := permissionService.ValidateUserPermission(c.UserContext(), domain.UserID(userID), c.Path(), method2ScopeMapper(c.Route().Method), "", &surveyID)
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}

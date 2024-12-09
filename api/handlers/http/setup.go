@@ -43,10 +43,10 @@ func Run(appContainer app.App, config config.Config) error {
 	surveyApi.Use(newAuthMiddleware([]byte(config.Server.Secret)))
 	surveyApi.Use(PermissionMiddleware(permissionService))
 	surveyApi.Post("", CreateSurvey(surveyService))
-	surveyApi.Get(":uuid", GetSurvey(surveyService))
-	surveyApi.Put("", UpdateSurvey(surveyService))
-	surveyApi.Post("cancel/:uuid", CancelSurvey(surveyService))
-	surveyApi.Delete(":uuid", DeleteSurvey(surveyService))
+	surveyApi.Get(":surveyID", GetSurvey(surveyService))
+	surveyApi.Put("/:surveyID", UpdateSurvey(surveyService))
+	surveyApi.Post("cancel/:surveyID", CancelSurvey(surveyService))
+	surveyApi.Delete(":surveyID", DeleteSurvey(surveyService))
 	surveyApi.Get("", GetAllSurveys(surveyService))
 	userService := service.NewUserService(appContainer.UserService(),
 		config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
@@ -64,9 +64,9 @@ func Run(appContainer app.App, config config.Config) error {
 	api.Get("/unread-messages/:user_id", GetUnreadMessages(notifService))
 
 	questionService := service.NewQuestionService(appContainer.QuestionService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
-	surveyApi.Post("/question", PermissionMiddleware(permissionService), CreateQuestion(questionService))
-	surveyApi.Delete("/question/:id", PermissionMiddleware(permissionService), DeleteQuestion(questionService))
-	surveyApi.Put("/question", PermissionMiddleware(permissionService), UpdateQuestion(questionService))
+	surveyApi.Post(":surveyID/question", PermissionMiddleware(permissionService), CreateQuestion(questionService))
+	surveyApi.Delete(":surveyID/question/:id", PermissionMiddleware(permissionService), DeleteQuestion(questionService))
+	surveyApi.Put(":surveyID/question", PermissionMiddleware(permissionService), UpdateQuestion(questionService))
 
 	roleService := service.NewRoleService(appContainer.RoleService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	roleApi := app.Group("api/v1")
@@ -82,7 +82,6 @@ func Run(appContainer app.App, config config.Config) error {
 	permissionApi.Get("/permission/:id", GetPermissionByID(permissionService))
 	permissionApi.Put("/permission", UpdatePermission(permissionService))
 	permissionApi.Delete("/permission/:id", DeletePermission(permissionService))
-	permissionApi.Patch("/permission/:userId/validate", ValidateUserPermission(permissionService))
 	permissionApi.Patch("/permission/:permissionId/assign/:userId", AssignPermissionToUser(permissionService))
 
 	votingApi := app.Group("api/v1/vote")

@@ -11,8 +11,9 @@ type PermissionRepo interface {
 	Create(ctx context.Context, permission domain.Permission) (domain.PermissionID, error)
 	GetAll(ctx context.Context, userID domain.UserID) (*[]domain.Permission, error)
 	GetByID(ctx context.Context, permissionID domain.PermissionID) (*domain.Permission, error)
+	GetByResourceScope(ctx context.Context, resource, scope string) (bool, error)
 	Update(ctx context.Context, permission domain.Permission) error
 	Delete(ctx context.Context, permissionID domain.PermissionID) error
-	Validate(ctx context.Context, userID domain.UserID, resource, scope, group string) (bool, error)
+	Validate(ctx context.Context, userID domain.UserID, resource, scope, group string, surveyID uint) (bool, error)
 	Assign(ctx context.Context, userPermission types.UserPermission) error
 }

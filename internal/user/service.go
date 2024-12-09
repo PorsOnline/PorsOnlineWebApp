@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
 
 	surveyPort "github.com/porseOnline/internal/survey/port"
 	"github.com/porseOnline/internal/user/domain"
@@ -242,8 +243,16 @@ func (ps *permissionService) GetUserPermissions(ctx context.Context, userID doma
 	return *permissions, nil
 }
 
-func (ps *permissionService) ValidateUserPermission(ctx context.Context, userID domain.UserID, resource, scope, group string) (bool, error) {
-	valid, err := ps.repo.Validate(ctx, userID, resource, scope, group)
+func (ps *permissionService) ValidateUserPermission(ctx context.Context, userID domain.UserID, resource, scope, group string, surveyID *string) (bool, error) {
+	var surveyIDInt int
+	var err error
+	if surveyID != nil {
+		surveyIDInt, err = strconv.Atoi(*surveyID)
+		if err != nil {
+			return false, errors.New("invalid survey id")
+		}
+	}
+	valid, err := ps.repo.Validate(ctx, userID, resource, scope, group, uint(surveyIDInt))
 	if err != nil {
 		logger.Error("error in validating user access", nil)
 		return valid, err
@@ -254,7 +263,11 @@ func (ps *permissionService) ValidateUserPermission(ctx context.Context, userID 
 
 func (ps *permissionService) SeedPermissions(ctx context.Context, permissions []domain.Permission) error {
 	for _, permission := range permissions {
-		_, err := ps.CreatePermission(ctx, permission)
+		exists, err := ps.repo.GetByResourceScope(ctx, permission.Resource, permission.Scope)
+		if exists {
+			continue
+		}
+		_, err = ps.CreatePermission(ctx, permission)
 		if err != nil {
 			return err
 		}

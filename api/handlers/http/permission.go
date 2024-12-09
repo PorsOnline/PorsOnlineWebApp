@@ -2,7 +2,6 @@ package http
 
 import (
 	"errors"
-	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/porseOnline/api/service"
@@ -103,28 +102,6 @@ func DeletePermission(svc *service.PermissionService) fiber.Handler {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
 		logger.Info("deleted permission successfully", nil)
-		return nil
-	}
-}
-
-func ValidateUserPermission(svc *service.PermissionService) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		var req UserPermissionValidationRequest
-		if err := c.BodyParser(&req); err != nil {
-			return fiber.ErrBadRequest
-		}
-		userID, err := strconv.Atoi(c.Locals("UserID").(string))
-		valid, err := svc.ValidateUserPermission(c.UserContext(), domain.UserID(userID), req.Resource, req.Scope, req.Group)
-		if err != nil {
-			logger.Error("error in validating user permission", nil)
-			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
-		}
-
-		if !valid {
-			logger.Error("user do not have access to this resource", nil)
-			return fiber.NewError(fiber.StatusNotAcceptable, "Forbidden")
-		}
-		logger.Info("validate user permission successfully", nil)
 		return nil
 	}
 }
