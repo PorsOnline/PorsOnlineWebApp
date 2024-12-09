@@ -41,6 +41,6 @@ func (ps *PermissionService) ValidateUserPermission(ctx context.Context, userID 
 	return ps.svc.ValidateUserPermission(ctx, userID, resource, scope, group)
 }
 
-func (ps *PermissionService) AssignPermissionToUser(ctx context.Context, permissionID domain.PermissionID, userID domain.UserID) error {
-	return ps.svc.AssignPermissionToUser(ctx, permissionID, userID)
+func (ps *PermissionService) AssignPermissionToUser(ctx context.Context, permissionDetails []domain.PermissionDetails) error {
+	return ps.svc.AssignPermissionToUser(ctx, permissionDetails)
 }

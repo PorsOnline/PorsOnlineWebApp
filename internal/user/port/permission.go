@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/porseOnline/internal/user/domain"
+	"github.com/porseOnline/pkg/adapters/storage/types"
 )
 
 type PermissionRepo interface {
@@ -13,5 +14,5 @@ type PermissionRepo interface {
 	Update(ctx context.Context, permission domain.Permission) error
 	Delete(ctx context.Context, permissionID domain.PermissionID) error
 	Validate(ctx context.Context, userID domain.UserID, resource, scope, group string) (bool, error)
-	Assign(ctx context.Context, permissionID domain.PermissionID, userID domain.UserID) error
+	Assign(ctx context.Context, userPermission types.UserPermission) error
 }

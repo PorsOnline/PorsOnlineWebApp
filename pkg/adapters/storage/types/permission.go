@@ -1,7 +1,7 @@
 package types
 
 import (
-	"time"
+	// "time"
 
 	"gorm.io/gorm"
 )
@@ -13,6 +13,6 @@ type Permission struct {
 	Resource string        `gorm:"column:resource"`
 	Scope    string        `gorm:"column:scope"`
 	Policy   uint8         `gorm:"column:policy"`
-	Duration time.Duration `gorm:"column:duration"`
-	Users    []User        `gorm:"many2many:user_permissions"`
+	// Duration time.Duration `gorm:"column:duration"`
+	UserPermissions    []UserPermission
 }

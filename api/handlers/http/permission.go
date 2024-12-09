@@ -134,15 +134,12 @@ func ValidateUserPermission(svc *service.PermissionService) fiber.Handler {
 
 func AssignPermissionToUser(svc *service.PermissionService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		permissionId, err := c.ParamsInt("permissionId")
-		if err != nil {
+		var req []domain.PermissionDetails
+		if err := c.BodyParser(&req); err != nil {
+			logger.Error("error in parse assign permission body", nil)
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
-		userId, err := c.ParamsInt("userId")
-		if err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
-		}
-		err = svc.AssignPermissionToUser(c.UserContext(), domain.PermissionID(permissionId), domain.UserID(userId))
+		err := svc.AssignPermissionToUser(c.UserContext(), req)
 		if err != nil {
 			logger.Error("error in assining permission to user", nil)
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())

@@ -68,9 +68,9 @@ func (r *permissionRepo) Delete(ctx context.Context, permissionID domain.Permiss
 	return r.db.Table("permissions").Where("id = ?", permissionID).Delete(&types.Permission{}).Error
 }
 
-func (r *permissionRepo) Assign(ctx context.Context, permissionID domain.PermissionID, userID domain.UserID) error {
+func (r *permissionRepo) Assign(ctx context.Context, userPermission types.UserPermission) error {
 	var permission types.Permission
-	err := r.db.Debug().Table("permissions").Where("id = ?", permissionID).WithContext(ctx).First(&permission).Error
+	err := r.db.Debug().Table("permissions").Where("id = ?", userPermission.PermissionID).WithContext(ctx).First(&permission).Error
 
 	if err != nil {
 		return err
@@ -82,7 +82,7 @@ func (r *permissionRepo) Assign(ctx context.Context, permissionID domain.Permiss
 
 	// find user function
 	var user types.User
-	err = r.db.Debug().Table("users").Where("id = ?", userID).WithContext(ctx).Preload("Role").First(&user).Error
+	err = r.db.Debug().Table("users").Where("id = ?", userPermission.UserID).WithContext(ctx).Preload("Role").First(&user).Error
 
 	if err != nil {
 		return err
@@ -114,38 +114,41 @@ func (r *permissionRepo) Assign(ctx context.Context, permissionID domain.Permiss
 
 func (r *permissionRepo) GetAll(ctx context.Context, userID domain.UserID) (*[]domain.Permission, error) {
 	var user types.User
-	err := r.db.Debug().Table("users").Where("id = ?", userID).WithContext(ctx).Preload("Permissions").First(&user, userID).Error
+	err := r.db.Debug().Table("users").Where("id = ?", userID).WithContext(ctx).Preload("UserPermissions").First(&user, userID).Error
 
 	if err != nil {
 		return nil, err
 	}
 
 	var permissions []domain.Permission
-	for _, permission := range user.Permissions {
-		mappedPermission := mapper.PermissionStorage2Domain(permission)
-		permissions = append(permissions, *mappedPermission)
+	for _, userPermission := range user.UserPermissions {
+		permission, err := r.GetByID(ctx, domain.PermissionID(userPermission.PermissionID))
+		if err != nil {
+			return nil, err
+		}
+		permissions = append(permissions, *permission)
 	}
 	return &permissions, nil
 }
 
 func (r *permissionRepo) Validate(ctx context.Context, userID domain.UserID, resource, scope, group string) (bool, error) {
 	var user types.User
-	err := r.db.Debug().Table("users").Where("id = ?", userID).WithContext(ctx).Preload("Role").Preload("Permissions").First(&user, userID).Error
+	err := r.db.Debug().Table("users").Where("id = ?", userID).WithContext(ctx).Preload("Role").Preload("UserPermissions").First(&user, userID).Error
 
 	if err != nil {
 		return false, err
 	}
 
 	valid := false
-	for _, foundPerm := range user.Permissions {
-		if foundPerm.Owner == user.ID {
+	for _, userPermission := range user.UserPermissions {
+		if userPermission.Permission.Owner == user.ID {
 			valid = true
 			break
-		} else if user.Role.AccessLevel == 1 && foundPerm.Resource == resource && foundPerm.Scope == scope && foundPerm.Group == group && foundPerm.CreatedAt.Add(foundPerm.Duration).Before(time.Now()) {
+		} else if user.Role.AccessLevel == 1 && userPermission.Permission.Resource == resource && userPermission.Permission.Scope == scope && userPermission.Permission.Group == group && userPermission.CreatedAt.Add(userPermission.Duration).Before(time.Now()) {
 			valid = true
 			break
 		} else if user.Role.AccessLevel > 1 {
-			valid = foundPerm.Policy <= 3
+			valid = userPermission.Permission.Policy <= 3
 		}
 	}
 
