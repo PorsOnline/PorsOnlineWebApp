@@ -30,4 +30,5 @@ type PermissionService interface {
 	DeletePermission(ctx context.Context, permissionID domain.PermissionID) error
 	ValidateUserPermission(ctx context.Context, userID domain.UserID, resource, scope, group string) (bool, error)
 	AssignPermissionToUser(ctx context.Context,permissionDetails []domain.PermissionDetails) error
+	SeedPermissions(ctx context.Context, permissions []domain.Permission) error 
 }

@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/porseOnline/api/service"
@@ -112,12 +113,8 @@ func ValidateUserPermission(svc *service.PermissionService) fiber.Handler {
 		if err := c.BodyParser(&req); err != nil {
 			return fiber.ErrBadRequest
 		}
-
-		userId, err := c.ParamsInt("userId")
-		if err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
-		}
-		valid, err := svc.ValidateUserPermission(c.UserContext(), domain.UserID(userId), req.Resource, req.Scope, req.Group)
+		userID, err := strconv.Atoi(c.Locals("UserID").(string))
+		valid, err := svc.ValidateUserPermission(c.UserContext(), domain.UserID(userID), req.Resource, req.Scope, req.Group)
 		if err != nil {
 			logger.Error("error in validating user permission", nil)
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())

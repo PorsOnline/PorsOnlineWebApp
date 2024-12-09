@@ -123,25 +123,37 @@ func (r *permissionRepo) GetAll(ctx context.Context, userID domain.UserID) (*[]d
 }
 
 func (r *permissionRepo) Validate(ctx context.Context, userID domain.UserID, resource, scope, group string) (bool, error) {
-	var user types.User
-	err := r.db.Debug().Table("users").Where("id = ?", userID).WithContext(ctx).Preload("Role").Preload("UserPermissions").First(&user, userID).Error
+	var userPermissionDetails types.UserPermission
+	err := r.db.Table("users u").
+		Joins("left join user_permissions up on u.id = up.user_id").
+		Joins("left join permissions p on p.id = up.permission_id").
+		Select("up.id", "up.duration", "up.created_at").
+		Where("u.id = ? and (? like replace(p.resource, ':id', '%') or ? like replace(p.resource, ':uuid', '%')) and p.scope = ?", userID, resource, resource, scope).
+		First(&userPermissionDetails).Error
 
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
 		return false, err
 	}
 
-	valid := false
-	for _, userPermission := range user.UserPermissions {
-		if userPermission.Permission.Owner == user.ID {
-			valid = true
-			break
-		} else if user.Role.AccessLevel == 1 && userPermission.Permission.Resource == resource && userPermission.Permission.Scope == scope && userPermission.Permission.Group == group && userPermission.CreatedAt.Add(userPermission.Duration).Before(time.Now()) {
-			valid = true
-			break
-		} else if user.Role.AccessLevel > 1 {
-			valid = userPermission.Permission.Policy <= 3
+	if userPermissionDetails.ID > 0 {
+		if userPermissionDetails.CreatedAt.Add(userPermissionDetails.Duration).Before(time.Now()) {
+			return true, nil
 		}
 	}
+	return false, nil
 
-	return valid, nil
+	// for _, userPermission := range user.UserPermissions {
+	// 	if userPermission.Permission.Owner == user.ID {
+	// 		valid = true
+	// 		break
+	// 	} else if user.Role.AccessLevel == 1 && userPermission.Permission.Resource == resource && userPermission.Permission.Scope == scope && userPermission.Permission.Group == group && userPermission.CreatedAt.Add(userPermission.Duration).Before(time.Now()) {
+	// 		valid = true
+	// 		break
+	// 	} else if user.Role.AccessLevel > 1 {
+	// 		valid = userPermission.Permission.Policy <= 3
+	// 	}
+	// }
 }

@@ -25,11 +25,13 @@ func (o DBConnOptions) PostgresDSN() string {
 
 func NewPsqlGormConnection(opt DBConnOptions) (*gorm.DB, error) {
 	return gorm.Open(postgres.Open(opt.PostgresDSN()), &gorm.Config{
-		Logger: logger.Discard,
+		Logger: logger.Default,
 	})
 }
 func GormMigrations(db *gorm.DB) {
 	db.AutoMigrate(
+		&types.Permission{},
+		&types.UserPermission{},
 		&types.Notification{},
 		&types.User{},
 		&types.CodeVerification{},

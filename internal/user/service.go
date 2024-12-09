@@ -218,6 +218,8 @@ func (ps *permissionService) AssignPermissionToUser(ctx context.Context, permiss
 			if err != nil {
 				return err
 			}
+		} else {
+			permissionDetail.SurveyID = nil
 		}
 
 		err = ps.repo.Assign(ctx, *mapper.PermissionDetailsDomain2Storage(permissionDetail))
@@ -248,4 +250,14 @@ func (ps *permissionService) ValidateUserPermission(ctx context.Context, userID 
 	}
 	logger.Info("successful validation on user access", nil)
 	return valid, nil
+}
+
+func (ps *permissionService) SeedPermissions(ctx context.Context, permissions []domain.Permission) error {
+	for _, permission := range permissions {
+		_, err := ps.CreatePermission(ctx, permission)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
