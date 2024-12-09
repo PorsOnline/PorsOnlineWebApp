@@ -28,7 +28,7 @@ func main() {
 	appContainer := app.NewMustApp(c)
 	err = http.Run(appContainer, c)
 	if err != nil {
-		log.Fatal("can not start the programm")
+		log.Fatal("can not start the programm", err.Error())
 	}
 
 }

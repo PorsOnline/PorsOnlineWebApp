@@ -88,5 +88,8 @@ func Run(appContainer app.App, config config.Config) error {
 	votingService := service.NewVotingService(appContainer.VotingService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	votingApi.Post("", Vote(votingService))
 
-	return app.Listen(fmt.Sprintf(":%d", config.Server.HttpPort))
+	certFile := "/PorsOnlineWebApp/certs/server.crt"
+	keyFile := "/PorsOnlineWebApp/certs/server.key"
+
+	return app.ListenTLS(fmt.Sprintf(":%d", config.Server.HttpPort), certFile, keyFile)
 }
