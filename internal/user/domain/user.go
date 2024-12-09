@@ -42,3 +42,9 @@ func (u *User) Validate() error {
 	}
 	return nil
 }
+
+type PermissionDetails struct {
+	PermissionID PermissionID
+	SurveyID     *uint
+	Duration     *time.Duration
+}

@@ -19,7 +19,6 @@ func Run(appContainer app.App, config config.Config) error {
 		AppName:           "Survey v0.0.1",
 		EnablePrintRoutes: true,
 	})
-
 	app.Use(TraceMiddleware())
 	app.Use(logger.New(logger.Config{
 		Format: "[${time}] ${status} - ${latency} ${method} ${path} TraceID: ${locals:traceID}\n",
@@ -38,14 +37,16 @@ func Run(appContainer app.App, config config.Config) error {
 			return c.SendString("STOP` SENDING TOO MUCH REQUESTS")
 		},
 	}))
+	permissionService := service.NewPermissionService(appContainer.PermissionService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	surveyService := service.NewService(appContainer.SurveyService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	surveyApi := app.Group("api/v1/survey")
 	surveyApi.Use(newAuthMiddleware([]byte(config.Server.Secret)))
+	surveyApi.Use(PermissionMiddleware(permissionService))
 	surveyApi.Post("", CreateSurvey(surveyService))
-	surveyApi.Get(":uuid", GetSurvey(surveyService))
-	surveyApi.Put("", UpdateSurvey(surveyService))
-	surveyApi.Post("cancel/:uuid", CancelSurvey(surveyService))
-	surveyApi.Delete(":uuid", DeleteSurvey(surveyService))
+	surveyApi.Get(":surveyID", GetSurvey(surveyService))
+	surveyApi.Put("/:surveyID", UpdateSurvey(surveyService))
+	surveyApi.Post("cancel/:surveyID", CancelSurvey(surveyService))
+	surveyApi.Delete(":surveyID", DeleteSurvey(surveyService))
 	surveyApi.Get("", GetAllSurveys(surveyService))
 	userService := service.NewUserService(appContainer.UserService(),
 		config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
@@ -55,7 +56,7 @@ func Run(appContainer app.App, config config.Config) error {
 	api.Post("/sign-in", SignIn(userService))
 	api.Post("/sign-up-code-verification", SignUpCodeVerification(userService))
 	api.Put("/user/update", Update(userService))
-	api.Delete("/user/:id", DeleteByID(userService))
+	api.Delete("/user/:id", PermissionMiddleware(permissionService), DeleteByID(userService))
 
 	api.Get("/users/:id", GetUserByID(userService))
 	notifService := service.NewNotificationSerivce(appContainer.NotifService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
@@ -63,9 +64,9 @@ func Run(appContainer app.App, config config.Config) error {
 	api.Get("/unread-messages/:user_id", GetUnreadMessages(notifService))
 
 	questionService := service.NewQuestionService(appContainer.QuestionService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
-	surveyApi.Post("/question", CreateQuestion(questionService))
-	surveyApi.Delete("/question/:id", DeleteQuestion(questionService))
-	surveyApi.Put("/question", UpdateQuestion(questionService))
+	surveyApi.Post(":surveyID/question", PermissionMiddleware(permissionService), CreateQuestion(questionService))
+	surveyApi.Delete(":surveyID/question/:id", PermissionMiddleware(permissionService), DeleteQuestion(questionService))
+	surveyApi.Put(":surveyID/question", PermissionMiddleware(permissionService), UpdateQuestion(questionService))
 
 	roleService := service.NewRoleService(appContainer.RoleService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	roleApi := app.Group("api/v1")
@@ -75,17 +76,15 @@ func Run(appContainer app.App, config config.Config) error {
 	roleApi.Delete("/role/:id", DeleteRole(roleService))
 	roleApi.Patch("/role/:roleId/assign/:userId", AssignRoleToUser(roleService))
 
-	permissionService := service.NewPermissionService(appContainer.PermissionService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	permissionApi := app.Group("api/v1")
 	permissionApi.Post("/permission", CreatePermission(permissionService))
 	permissionApi.Get("/permissions/:id", GetUserPermissions(permissionService))
 	permissionApi.Get("/permission/:id", GetPermissionByID(permissionService))
 	permissionApi.Put("/permission", UpdatePermission(permissionService))
 	permissionApi.Delete("/permission/:id", DeletePermission(permissionService))
-	permissionApi.Patch("/permission/:userId/validate", ValidateUserPermission(permissionService))
 	permissionApi.Patch("/permission/:permissionId/assign/:userId", AssignPermissionToUser(permissionService))
 
-  votingApi := app.Group("api/v1/vote")
+	votingApi := app.Group("api/v1/vote")
 	votingService := service.NewVotingService(appContainer.VotingService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	votingApi.Post("", Vote(votingService))
 
