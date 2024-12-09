@@ -6,6 +6,7 @@ import (
 	questionPort "github.com/porseOnline/internal/question/port"
 	surveyPort "github.com/porseOnline/internal/survey/port"
 	userPort "github.com/porseOnline/internal/user/port"
+	votingPort "github.com/porseOnline/internal/voting/port"
 )
 
 type App interface {
@@ -13,5 +14,8 @@ type App interface {
 	NotifService() notifPort.Service
 	SurveyService() surveyPort.Service
 	QuestionService() questionPort.Service
+	PermissionService() userPort.PermissionService
+	RoleService() userPort.RoleService
+	VotingService() votingPort.Service
 	Config() config.Config
 }
