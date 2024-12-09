@@ -94,19 +94,10 @@ func (r *permissionRepo) Assign(ctx context.Context, userPermission types.UserPe
 
 	if user.Role.AccessLevel >= permission.Policy {
 		//update user permissions
-		tx := r.db.WithContext(ctx).Begin()
-		if tx.Error != nil {
-			logger.Error(tx.Error.Error(), nil)
-			return tx.Error
-		}
-
-		if err := tx.Model(&user).Association("Permissions").Append(&permission); err != nil {
-			logger.Error(err.Error(), nil)
-			tx.Rollback()
+		if err := r.db.Model(&types.UserPermission{}).Create(&userPermission).Error; err != nil {
 			return err
 		}
-
-		return tx.Commit().Error
+		return nil
 	} else {
 		return errors.New("cannot assign this permission to the user")
 	}
