@@ -16,7 +16,6 @@ import (
 	"github.com/porseOnline/pkg/logger"
 
 	"golang.org/x/crypto/bcrypt"
-
 )
 
 var (
@@ -77,7 +76,6 @@ func (s *service) GetUserByEmail(ctx context.Context, email domain.Email) (*doma
 
 	return user, nil
 }
-
 
 func (s *service) UpdateUser(ctx context.Context, user domain.User) error {
 	err := s.repo.UpdateUser(ctx, user)
@@ -167,6 +165,8 @@ type permissionService struct {
 	repo          port.PermissionRepo
 	surveyService surveyPort.Service
 }
+
+// GetUserByFilter implements port.PermissionService.
 
 func NewPermissionService(permissionRepo port.PermissionRepo, surveyService surveyPort.Service) port.PermissionService {
 	return &permissionService{
@@ -295,7 +295,7 @@ func (ps *permissionService) AssignSurveyPermissionsToOwner(ctx context.Context,
 		ps.repo.Assign(ctx, types.UserPermission{PermissionID: domain.PermissionID(perm.ID), UserID: userID, SurveyID: &surveyID})
 	}
 	return nil
-
+}
 func (s *service) GetUserByFilter(ctx context.Context, filter *domain.UserFilter) (*domain.User, error) {
 	user, err := s.repo.GetByFilter(ctx, filter)
 	if err != nil {
