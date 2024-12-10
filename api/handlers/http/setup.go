@@ -116,14 +116,15 @@ func registerAuthAPI(appContainer app.App, cfg config.ServerConfig, userRouter f
 	votingApi := app.Group("api/v1/vote")
 	votingService := service.NewVotingService(appContainer.VotingService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	votingApi.Post("", Vote(votingService))
-
-	return app.Listen(fmt.Sprintf(":%d", config.Server.HttpPort))
-//=======
-	surveyRouter.Post("", CreateSurvey(surveySvcGetter))
+  surveyRouter.Post("", CreateSurvey(surveySvcGetter))
 	surveyRouter.Get(":uuid", GetSurvey(surveySvcGetter))
 	surveyRouter.Put(":uuid", UpdateSurvey(surveySvcGetter))
 	surveyRouter.Post("cancel/:uuid", CancelSurvey(surveySvcGetter))
 	surveyRouter.Delete(":uuid", DeleteSurvey(surveySvcGetter))
 	surveyRouter.Get("", GetAllSurveys(surveySvcGetter))
-//>>>>>>> feat/validation-code-and-its-time
-}
+  
+	certFile := "/PorsOnlineWebApp/certs/server.crt"
+	keyFile := "/PorsOnlineWebApp/certs/server.key"
+
+	return app.ListenTLS(fmt.Sprintf(":%d", config.Server.HttpPort), certFile, keyFile)
+
