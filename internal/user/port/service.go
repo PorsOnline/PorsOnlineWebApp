@@ -13,6 +13,7 @@ type Service interface {
 
 	UpdateUser(ctx context.Context, user domain.User) error
 	DeleteByID(ctx context.Context, userID domain.UserID) error
+	GetUserByFilter(ctx context.Context, filter *domain.UserFilter) (*domain.User, error)
 }
 
 type RoleService interface {
@@ -30,10 +31,7 @@ type PermissionService interface {
 	UpdatePermission(ctx context.Context, permission domain.Permission) error
 	DeletePermission(ctx context.Context, permissionID domain.PermissionID) error
 	ValidateUserPermission(ctx context.Context, userID domain.UserID, resource, scope, group string, surveyID string) (bool, error)
-	AssignPermissionToUser(ctx context.Context,permissionDetails []domain.PermissionDetails) error
-	SeedPermissions(ctx context.Context, permissions []domain.Permission) error 
+	AssignPermissionToUser(ctx context.Context, permissionDetails []domain.PermissionDetails) error
+	SeedPermissions(ctx context.Context, permissions []domain.Permission) error
 	AssignSurveyPermissionsToOwner(ctx context.Context, permissions []domain.Permission, userID uint, surveyID uint) error
-
-	GetUserByFilter(ctx context.Context, filter *domain.UserFilter) (*domain.User, error)
-
 }
