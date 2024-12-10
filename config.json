@@ -1,6 +1,6 @@
 {
     "db": {
-        "host": "localhost",
+        "host": "postgres",
         "port": 5432,
         "database": "PorsOnlineDB",
         "s_database": "",

@@ -1,10 +1,11 @@
 package config
 
 type Config struct {
-	DB            DBConfig     `json:"db"  yaml:"db"`
-	Logger        LoggerConfig `json:"logger"  yaml:"logger"`
-	Server        ServerConfig `json:"server"  yaml:"server"`
-	Elasticsearch EsConfig     `json:"elasticsearch"  yaml:"elasticsearch"`
+	DB            DBConfig       `json:"db"  yaml:"db"`
+	SecretDB      SecretDBConfig `json:"secretDB" yaml:"secretDB"`
+	Logger        LoggerConfig   `json:"logger"  yaml:"logger"`
+	Server        ServerConfig   `json:"server"  yaml:"server"`
+	Elasticsearch EsConfig       `json:"elasticsearch"  yaml:"elasticsearch"`
 }
 
 type ServerConfig struct {
@@ -16,13 +17,21 @@ type ServerConfig struct {
 	RatelimitTimePeriod int    `json:"ratelimit_time_period"  yaml:"ratelimit_time_period"`
 }
 type DBConfig struct {
-	Host      string `json:"host"`
-	Port      uint   `json:"port"`
-	Database  string `json:"database"`
-	SDatabase string `json:"s_database"  yaml:"s_database"`
-	Schema    string `json:"schema"`
-	User      string `json:"user"`
-	Password  string `json:"password"`
+	Host     string `json:"host"`
+	Port     uint   `json:"port"`
+	Database string `json:"database"`
+	Schema   string `json:"schema"`
+	User     string `json:"user"`
+	Password string `json:"password"`
+}
+
+type SecretDBConfig struct {
+	Host     string `json:"host"`
+	Port     uint   `json:"port"`
+	Database string `json:"database"`
+	Schema   string `json:"schema"`
+	User     string `json:"user"`
+	Password string `json:"password"`
 }
 
 type LoggerConfig struct {
