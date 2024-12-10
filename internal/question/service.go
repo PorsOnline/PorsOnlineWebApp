@@ -29,6 +29,9 @@ func (qs *questionService) CreateQuestion(ctx context.Context, question domain.Q
 		}
 		return domain.Question{}, err
 	}
+	if !survey.IsSequential && question.IsDependency {
+		return domain.Question{}, errors.New("conditional question on random survey is not allowed")
+	}
 	err = qs.validateUserInputsExistence(ctx, question, survey.ID)
 	if err != nil {
 		return domain.Question{}, err
@@ -114,6 +117,9 @@ func (qs *questionService) UpdateQuestion(ctx context.Context, question domain.Q
 func (qs *questionService) validateUserInputsExistence(ctx context.Context, question domain.Question, surveyID uint) error {
 	if question.QuestionType == types.ConditionalMultipleChoice {
 		for _, option := range question.QuestionOptions {
+			if option.NextQuestionID == nil {
+				return errors.New(fmt.Sprintf("next question id should be chosen for option %v", option.OptionText))
+			}
 			nextQuestionID, err := qs.questionRepo.Get(ctx, *option.NextQuestionID)
 			if err != nil {
 				if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -143,6 +149,9 @@ func (qs questionService) GetNextQuestion(ctx context.Context, userQuestionStep 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		question, err := qs.questionRepo.GetFirstQuestion(ctx, survey.ID)
 		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return &domain.Question{}, errors.New("no question found for the survey")
+			}
 			return &domain.Question{}, err
 		}
 		err = qs.questionRepo.CreateQuestionStep(ctx, types.UserQuestionStep{SurveyID: survey.ID, QuestionID: question.ID, UserID: uint(userID)})
@@ -152,9 +161,6 @@ func (qs questionService) GetNextQuestion(ctx context.Context, userQuestionStep 
 		return domain.TypeToDomainMapper(*question, survey.UUID), nil
 	} else if err != nil {
 		return &domain.Question{}, err
-	}
-	if currentStep.QuestionID != questionStep.QuestionID {
-		return &domain.Question{}, errors.New("invalid current step")
 	}
 	if questionStep.Action == types.Forward {
 		nextQuestionID, err := qs.questionRepo.GetNextQuestionByCondition(ctx, *currentStep)

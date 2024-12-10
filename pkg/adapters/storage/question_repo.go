@@ -162,7 +162,7 @@ func (q *questionRepo) GetPreviousQuestion(ctx context.Context, userQuestionStep
 
 func (q *questionRepo) GetFirstQuestion(ctx context.Context, surveyID uint) (*types.Question, error) {
 	var question types.Question
-	err := q.db.Model(&types.Question{}).Where("questions.survey_id = ? and \"order\" = 1 ", surveyID).First(&question).Error
+	err := q.db.Model(&types.Question{}).Preload("Options").Where("questions.survey_id = ? and \"order\" = 1 ", surveyID).First(&question).Error
 	if err != nil {
 		return &types.Question{}, err
 	}
