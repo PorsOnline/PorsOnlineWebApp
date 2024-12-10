@@ -122,7 +122,7 @@ func NewApp(cfg config.Config) (App, error) {
 
 	a.notifService = notification.NewService(storage.NewNotifRepo(a.db))
 
-	a.surveyService = survey.NewService(storage.NewSurveyRepo(a.db))
+	a.surveyService = survey.NewService(storage.NewSurveyRepo(a.db), a.permissionService)
 
 	a.questionService = question.NewService(storage.NewQuestionRepo(a.db), a.surveyService)
 
@@ -143,34 +143,35 @@ func NewMustApp(cfg config.Config) App {
 
 func generatePermissions() []domain.Permission {
 	permissions := []domain.Permission{
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/survey", Scope: "create"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/survey/:uuid", Scope: "read"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/survey", Scope: "update"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/survey/cancel/:uuid", Scope: "cancel"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/survey/:uuid", Scope: "delete"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/survey", Scope: "list"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/user", Scope: "create"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/user/update", Scope: "update"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/user/:id", Scope: "delete"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/user/:id", Scope: "read"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/send_message", Scope: "create"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/unread-messages/:user_id", Scope: "list"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/survey/question", Scope: "create"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/survey/question/:id", Scope: "delete"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/survey/question", Scope: "update"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/role", Scope: "create"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/role/:id", Scope: "read"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/role", Scope: "update"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/role/:id", Scope: "delete"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/role/:roleId/assign/:userId", Scope: "assign"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/permission", Scope: "create"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/permissions/:id", Scope: "read"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/permission/:id", Scope: "read"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/permission", Scope: "update"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/permission/:id", Scope: "delete"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/permission/:userId/validate", Scope: "validate"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/permission/:permissionId/assign/:userId", Scope: "assign"},
-		{Policy: domain.PolicyUnknown, Resource: "api/v1/vote", Scope: "create"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/survey", Scope: "create"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/survey/:uuid", Scope: "read"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/survey", Scope: "update"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/survey/cancel/:uuid", Scope: "create"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/survey/:uuid", Scope: "delete"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/survey", Scope: "read"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/user", Scope: "create"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/user/update", Scope: "update"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/user/:id", Scope: "delete"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/user/:id", Scope: "read"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/send_message", Scope: "create"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/unread-messages/:user_id", Scope: "read"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/survey/:id/question", Scope: "create"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/survey/:id/question/:id", Scope: "delete"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/survey/:id/question", Scope: "update"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/survey/:id/question/get-next", Scope: "read"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/role", Scope: "create"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/role/:id", Scope: "read"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/role", Scope: "update"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/role/:id", Scope: "delete"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/role/:roleId/assign/:userId", Scope: "create"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/permission", Scope: "create"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/permissions/:id", Scope: "read"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/permission/:id", Scope: "read"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/permission", Scope: "update"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/permission/:id", Scope: "delete"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/permission/:userId/validate", Scope: "create"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/permission/:permissionId/assign/:userId", Scope: "create"},
+		{Policy: domain.PolicyUnknown, Resource: "/api/v1/vote", Scope: "create"},
 	}
 	return permissions
 }

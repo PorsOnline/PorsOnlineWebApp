@@ -11,6 +11,7 @@ import (
 	"github.com/porseOnline/internal/user/domain"
 	"github.com/porseOnline/internal/user/port"
 	"github.com/porseOnline/pkg/adapters/storage/mapper"
+	"github.com/porseOnline/pkg/adapters/storage/types"
 	"github.com/porseOnline/pkg/logger"
 )
 
@@ -263,14 +264,25 @@ func (ps *permissionService) ValidateUserPermission(ctx context.Context, userID 
 
 func (ps *permissionService) SeedPermissions(ctx context.Context, permissions []domain.Permission) error {
 	for _, permission := range permissions {
-		exists, err := ps.repo.GetByResourceScope(ctx, permission.Resource, permission.Scope)
-		if exists {
+		perm, err := ps.repo.GetByResourceScope(ctx, permission.Resource, permission.Scope)
+		if perm.ID > 0 {
 			continue
 		}
 		_, err = ps.CreatePermission(ctx, permission)
 		if err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (ps *permissionService) AssignSurveyPermissionsToOwner(ctx context.Context, permissions []domain.Permission, userID uint, surveyID uint) error {
+	for _, permission := range permissions {
+		perm, err := ps.repo.GetByResourceScope(ctx, permission.Resource, permission.Scope)
+		if err != nil {
+			return err
+		}
+		ps.repo.Assign(ctx, types.UserPermission{PermissionID: domain.PermissionID(perm.ID), UserID: userID, SurveyID: &surveyID})
 	}
 	return nil
 }

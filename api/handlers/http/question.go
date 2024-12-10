@@ -1,7 +1,6 @@
 package http
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"strconv"
@@ -87,15 +86,14 @@ func DeleteQuestion(svc *service.QuestionService) fiber.Handler {
 
 func GetNextQuestion(svc *service.QuestionService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		ctx := context.WithValue(c.UserContext(), "UserID", c.Locals("UserID"))
 		var req domain.UserQuestionStep
 		surveyParam := c.Params("surveyID")
 		surveyID, err := strconv.Atoi(surveyParam)
 		if err := c.BodyParser(&req); err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
-		userID, err := strconv.Atoi(ctx.Value("UserID").(string))
-		resp, err := svc.GetNextQuestion(ctx, req, uint(userID), uint(surveyID))
+		userID, err := strconv.Atoi(c.Locals("UserID").(string))
+		resp, err := svc.GetNextQuestion(c.UserContext(), req, uint(userID), uint(surveyID))
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}

@@ -61,7 +61,10 @@ func (sr *surveyRepo) Create(ctx context.Context, survey types.Survey, cities []
 		return nil, err
 	}
 	for _, city := range cities {
-		err := tx.Model(&types.SurveyCity{}).Debug().Create(&types.SurveyCity{SurveyID: survey.ID, Name: city}).Error
+		var typeCity types.SurveyCity
+		typeCity.Name = city
+		typeCity.SurveyID = survey.ID
+		err := tx.Model(&types.SurveyCity{}).Debug().Create(&typeCity).Error
 		if err != nil {
 			tx.Rollback()
 			return nil, err

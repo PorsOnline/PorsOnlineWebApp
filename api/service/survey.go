@@ -16,9 +16,9 @@ func NewService(srv surveyPort.Service, authSecret string, expMin, refreshExpMin
 	return &SurveyService{srv: srv, authSecret: authSecret, expMin: expMin, refreshExpMin: refreshExpMin}
 }
 
-func (s *SurveyService) CreateSurvey(ctx context.Context, survey *domain.Survey) (*domain.Survey, error) {
+func (s *SurveyService) CreateSurvey(ctx context.Context, survey *domain.Survey, userID uint) (*domain.Survey, error) {
 	//validation
-	return s.srv.CreateSurvey(ctx, *survey)
+	return s.srv.CreateSurvey(ctx, *survey, userID)
 }
 
 func (s *SurveyService) GetSurvey(ctx context.Context, id uint) (*domain.Survey, error) {

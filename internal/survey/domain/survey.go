@@ -10,6 +10,7 @@ import (
 
 type Survey struct {
 	ID                   uint
+	UserID               uint
 	UUID                 uuid.UUID
 	Title                string
 	StartAt              time.Time
@@ -32,6 +33,7 @@ func TypeToDomainMapper(survey types.Survey) *Survey {
 	}
 	return &Survey{
 		ID:                   survey.ID,
+		UserID:               survey.UserID,
 		UUID:                 survey.UUID,
 		Title:                survey.Title,
 		StartAt:              survey.StartAt,

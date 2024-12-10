@@ -8,7 +8,7 @@ import (
 )
 
 type Service interface {
-	CreateSurvey(ctx context.Context, survey domain.Survey) (*domain.Survey, error)
+	CreateSurvey(ctx context.Context, survey domain.Survey, userID uint) (*domain.Survey, error)
 	UpdateSurvey(ctx context.Context, survey domain.Survey, id uint) (*domain.Survey, error)
 	GetAllSurveys(ctx context.Context, page, pageSize int) ([]domain.Survey, error)
 	GetSurveyByUUID(ctx context.Context, uuid uuid.UUID) (*domain.Survey, error)

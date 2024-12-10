@@ -16,7 +16,8 @@ func CreateSurvey(svc *service.SurveyService) fiber.Handler {
 		if err := c.BodyParser(&req); err != nil {
 			return fiber.ErrBadRequest
 		}
-		response, err := svc.CreateSurvey(c.UserContext(), &req)
+		userID, err := strconv.Atoi(c.Locals("UserID").(string))
+		response, err := svc.CreateSurvey(c.UserContext(), &req, uint(userID))
 		if err != nil {
 			// if errors.Is(err, service.ErrUserCreationValidation) {
 			// 	return fiber.NewError(fiber.StatusBadRequest, err.Error())
