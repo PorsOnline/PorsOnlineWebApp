@@ -160,7 +160,7 @@ func (r *permissionRepo) Validate(ctx context.Context, userID domain.UserID, res
 
 func (r *permissionRepo) GetByResourceScope(ctx context.Context, resource, scope string) (bool, error) {
 	var permission types.Permission
-	err := r.db.Debug().Table("permissions").Where("resource = ? and scope = ?", permission, scope).WithContext(ctx).First(&permission).Error
+	err := r.db.Table("permissions").Where("resource = ? and scope = ?", permission, scope).WithContext(ctx).First(&permission).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -170,4 +170,8 @@ func (r *permissionRepo) GetByResourceScope(ctx context.Context, resource, scope
 	}
 
 	return true, nil
+}
+
+func (r *permissionRepo) CreateSurveyOwnerPermissions(ctx context.Context, userID, surveyID uint) {
+	
 }

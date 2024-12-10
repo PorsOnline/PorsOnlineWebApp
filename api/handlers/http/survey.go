@@ -1,11 +1,12 @@
 package http
 
 import (
+	"strconv"
+
 	"github.com/porseOnline/api/service"
 	"github.com/porseOnline/internal/survey/domain"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
 )
 
 
@@ -29,12 +30,12 @@ func CreateSurvey(svc *service.SurveyService) fiber.Handler {
 
 func GetSurvey(svc *service.SurveyService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var param = c.Params("uuid")
-		uuid, err := uuid.Parse(param)
+		var param = c.Params("surveyID")
+		surveyID, err := strconv.Atoi(param)
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
-		resp, err := svc.GetSurvey(c.Context(), uuid)
+		resp, err := svc.GetSurvey(c.Context(), uint(surveyID))
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
@@ -44,8 +45,8 @@ func GetSurvey(svc *service.SurveyService) fiber.Handler {
 
 func UpdateSurvey(svc *service.SurveyService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var param = c.Params("uuid")
-		uuid, err := uuid.Parse(param)
+		var param = c.Params("surveyID")
+		surveyID, err := strconv.Atoi(param)
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
@@ -53,8 +54,7 @@ func UpdateSurvey(svc *service.SurveyService) fiber.Handler {
 		if err := c.BodyParser(&req); err != nil {
 			return fiber.ErrBadRequest
 		}
-		req.UUID = uuid
-		response, err := svc.UpdateSurvey(c.UserContext(), &req)
+		response, err := svc.UpdateSurvey(c.UserContext(), &req, uint(surveyID))
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
@@ -64,12 +64,12 @@ func UpdateSurvey(svc *service.SurveyService) fiber.Handler {
 
 func CancelSurvey(svc *service.SurveyService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var param = c.Params("uuid")
-		uuid, err := uuid.Parse(param)
+		var param = c.Params("surveyID")
+		surveyID, err := strconv.Atoi(param)
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
-		err = svc.CancelSurvey(c.Context(), uuid)
+		err = svc.CancelSurvey(c.Context(),  uint(surveyID))
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
@@ -79,12 +79,12 @@ func CancelSurvey(svc *service.SurveyService) fiber.Handler {
 
 func DeleteSurvey(svc *service.SurveyService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var param = c.Params("uuid")
-		uuid, err := uuid.Parse(param)
+		var param = c.Params("surveyID")
+		surveyID, err := strconv.Atoi(param)
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
-		err = svc.DeleteSurvey(c.Context(), uuid)
+		err = svc.DeleteSurvey(c.Context(),  uint(surveyID))
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}

@@ -32,8 +32,9 @@ func (ss *service) CreateSurvey(ctx context.Context, survey domain.Survey) (*dom
 	return domain.TypeToDomainMapper(*createdSurvey), nil
 }
 
-func (ss *service) UpdateSurvey(ctx context.Context, survey domain.Survey) (*domain.Survey, error) {
+func (ss *service) UpdateSurvey(ctx context.Context, survey domain.Survey, id uint) (*domain.Survey, error) {
 	typeSurvey := domain.DomainToTypeMapper(survey)
+	typeSurvey.ID = id
 	updatedSurvey, err := ss.repo.Update(ctx, typeSurvey, survey.TargetCities)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -64,12 +65,12 @@ func (ss *service) GetSurveyByUUID(ctx context.Context, surveyUUID uuid.UUID) (*
 	return domain.TypeToDomainMapper(*survey), nil
 }
 
-func (ss *service) CancelSurvey(ctx context.Context, surveyUUID uuid.UUID) error {
-	return ss.repo.Cancel(ctx, surveyUUID)
+func (ss *service) CancelSurvey(ctx context.Context, id uint) error {
+	return ss.repo.Cancel(ctx, id)
 }
 
-func (ss *service) DeleteSurvey(ctx context.Context, surveyUUID uuid.UUID) error {
-	return ss.repo.Delete(ctx, surveyUUID)
+func (ss *service) DeleteSurvey(ctx context.Context, id uint) error {
+	return ss.repo.Delete(ctx, id)
 }
 
 func (ss *service) GetSurveyByID(ctx context.Context, surveyID uint) (*domain.Survey, error) {
