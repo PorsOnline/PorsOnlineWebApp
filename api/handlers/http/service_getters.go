@@ -26,3 +26,25 @@ func NotificationServiceGetter(appContainer app.App, cfg config.ServerConfig) Se
 		return service.NewNotificationSerivce(appContainer.NotifService(ctx), cfg.Secret, cfg.AuthExpMinute, cfg.AuthRefreshMinute)
 	}
 }
+func roleServiceGetter(appContainer app.App, cfg config.ServerConfig) ServiceGetter[*service.RoleService] {
+	return func(ctx context.Context) *service.RoleService {
+		return service.NewRoleService(appContainer.RoleService(ctx),
+			cfg.Secret, cfg.AuthExpMinute, cfg.AuthRefreshMinute)
+	}
+}
+func PermissionServiceGetter(appContainer app.App, cfg config.ServerConfig) ServiceGetter[*service.PermissionService] {
+	return func(ctx context.Context) *service.PermissionService {
+		return service.NewService(appContainer.PermissionService(ctx),
+			cfg.Secret, cfg.AuthExpMinute, cfg.AuthRefreshMinute)
+	}
+}
+func VotingServiceGetter(appContainer app.App, cfg config.ServerConfig) ServiceGetter[*service.VotingService] {
+	return func(ctx context.Context) *service.VotingService {
+		return service.NewService(appContainer.VotingService(ctx), cfg.Secret, cfg.AuthExpMinute, cfg.AuthRefreshMinute)
+	}
+}
+func QuestionSvcGetter(appContainer app.App, cfg config.ServerConfig) ServiceGetter[*service.QuestionService] {
+	return func(ctx context.Context) *service.VotingService {
+		return service.NewService(appContainer.QuestionService(ctx), cfg.Secret, cfg.AuthExpMinute, cfg.AuthRefreshMinute)
+	}
+}
