@@ -19,18 +19,18 @@ func NewSurveyRepo(db *gorm.DB) surveyPort.Repo {
 	return &surveyRepo{db: db}
 }
 
-func (sr *surveyRepo) Delete(ctx context.Context, uuid uuid.UUID) error {
-	return	sr.db.Where("uuid = ?", uuid).Delete(&types.Survey{UUID: uuid}).Error
+func (sr *surveyRepo) Delete(ctx context.Context, id uint) error {
+	return	sr.db.Where("id = ?", id).Delete(&types.Survey{Model: gorm.Model{ID: id}}).Error
 }
 
-func (sr *surveyRepo) Cancel(ctx context.Context, uuid uuid.UUID) error {
+func (sr *surveyRepo) Cancel(ctx context.Context, id uint) error {
 	var survey types.Survey
-	err := sr.db.Model(&types.Survey{}).Where("UUID = ?", uuid).First(&survey).Error
+	err := sr.db.Model(&types.Survey{}).Where("id = ?", id).First(&survey).Error
 	if err != nil {
 		return err
 	}
 	survey.IsActive = false
-	return sr.db.Model(&types.Survey{}).Where("UUID = ?", uuid).Save(&survey).Error
+	return sr.db.Model(&types.Survey{}).Where("id = ?", id).Save(&survey).Error
 }
 
 func (sr *surveyRepo) GetByUUID(ctx context.Context, uuid uuid.UUID) (*types.Survey, error) {
@@ -61,7 +61,10 @@ func (sr *surveyRepo) Create(ctx context.Context, survey types.Survey, cities []
 		return nil, err
 	}
 	for _, city := range cities {
-		err := tx.Model(&types.SurveyCity{}).Debug().Create(&types.SurveyCity{SurveyID: survey.ID, Name: city}).Error
+		var typeCity types.SurveyCity
+		typeCity.Name = city
+		typeCity.SurveyID = survey.ID
+		err := tx.Model(&types.SurveyCity{}).Debug().Create(&typeCity).Error
 		if err != nil {
 			tx.Rollback()
 			return nil, err
@@ -73,7 +76,7 @@ func (sr *surveyRepo) Create(ctx context.Context, survey types.Survey, cities []
 
 func (sr *surveyRepo) Update(ctx context.Context, survey types.Survey, cities []string) (*types.Survey, error) {
 	var oldSurvey types.Survey
-	err := sr.db.Model(&types.Survey{}).Where("UUID = ?", survey.UUID).First(&oldSurvey).Error
+	err := sr.db.Model(&types.Survey{}).Where("id = ?", survey.ID).First(&oldSurvey).Error
 	if err != nil {
 		return nil, err
 	}

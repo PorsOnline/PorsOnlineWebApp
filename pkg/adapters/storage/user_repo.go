@@ -48,7 +48,32 @@ func (r *userRepo) GetByEmail(ctx context.Context, email domain.Email) (*domain.
 	err := r.db.Table("users").
 		Where("email = ?", email).
 		First(&user).Error
-	print(user.PasswordHash)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	if user.ID == 0 {
+		return nil, nil
+	}
+
+	return mapper.UserStorage2Domain(user), nil
+}
+
+func (r *userRepo) GetByFilter(ctx context.Context, filter *domain.UserFilter) (*domain.User, error) {
+	var user types.User
+
+	q := r.db.Table("users").Debug().WithContext(ctx)
+
+	if filter.ID > 0 {
+		q = q.Where("id = ?", filter.ID)
+	}
+
+	if len(filter.Phone) > 0 {
+		q = q.Where("phone = ?", filter.Phone)
+	}
+
+	err := q.First(&user).Error
+
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}

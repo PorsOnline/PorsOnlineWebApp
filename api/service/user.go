@@ -2,10 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/porseOnline/api/pb"
+	codeVerficationDomain "github.com/porseOnline/internal/codeVerification/domain"
+	codeVerificationPort "github.com/porseOnline/internal/codeVerification/port"
 	"github.com/porseOnline/internal/user"
 	"github.com/porseOnline/internal/user/domain"
 	userPort "github.com/porseOnline/internal/user/port"
@@ -14,23 +18,30 @@ import (
 	"github.com/porseOnline/pkg/jwt"
 	"github.com/porseOnline/pkg/logger"
 	helperTime "github.com/porseOnline/pkg/time"
+	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	jwt2 "github.com/golang-jwt/jwt/v5"
 )
 
+var (
+	ErrPasswordNotMatch = errors.New("not match password")
+)
+
 type UserService struct {
-	svc                   userPort.Service
-	authSecret            string
-	expMin, refreshExpMin uint
+	svc                    userPort.Service
+	authSecret             string
+	expMin, refreshExpMin  uint
+	codeVerficationServise codeVerificationPort.Service
 }
 
-func NewUserService(svc userPort.Service, authSecret string, expMin, refreshExpMin uint) *UserService {
+func NewUserService(svc userPort.Service, authSecret string, expMin, refreshExpMin uint, codeVerificationSvc codeVerificationPort.Service) *UserService {
 	return &UserService{
-		svc:           svc,
-		authSecret:    authSecret,
-		expMin:        expMin,
-		refreshExpMin: refreshExpMin,
+		svc:                    svc,
+		authSecret:             authSecret,
+		expMin:                 expMin,
+		refreshExpMin:          refreshExpMin,
+		codeVerficationServise: codeVerificationSvc,
 	}
 }
 
@@ -56,7 +67,7 @@ func (s *UserService) SignUp(ctx context.Context, req *pb.UserSignUpFirstRequest
 		Phone:        domain.Phone(req.GetPhone()),
 		Email:        domain.Email(req.GetEmail()),
 		PasswordHash: req.GetPassword(),
-		NationalCode: req.GetNationalCode(),
+		NationalCode: domain.NationalCode(req.GetNationalCode()),
 		BirthDate:    req.GetBirthdate().AsTime(),
 		City:         req.GetCity(),
 		Gender:       req.GetGender(),
@@ -65,8 +76,13 @@ func (s *UserService) SignUp(ctx context.Context, req *pb.UserSignUpFirstRequest
 	if err != nil {
 		return nil, err
 	}
+
+	code := strconv.Itoa(helper.GetRandomCode())
+
+	s.codeVerficationServise.Send(ctx, codeVerficationDomain.NewCodeVerification(userID, fmt.Sprint(code), codeVerficationDomain.CodeVerificationTypeEmail, true, time.Minute*2))
+
 	// go helper.SendEmail(req.GetEmail())
-	go helper.SendEmail(req.GetEmail(), strconv.Itoa(helper.GetRandomCode()))
+	// go helper.SendEmail(req.GetEmail(), code)
 	response := &SignUpFirstResponseWrapper{
 		RequestTimestamp: time.Now().Unix(),
 		Data: &pb.UserSignUpFirstResponse{
@@ -82,36 +98,44 @@ func (s *UserService) SignUpCodeVerification(ctx context.Context, req *pb.UserSi
 	if err != nil {
 		return nil, err
 	}
-
-	accessToken, err := jwt.CreateToken([]byte(s.authSecret), &jwt.UserClaims{
-		RegisteredClaims: jwt2.RegisteredClaims{
-			ExpiresAt: jwt2.NewNumericDate(helperTime.AddMinutes(s.expMin, true)),
-		},
-		UserID: uint(req.GetUserId()),
-	})
+	ok, err := s.codeVerficationServise.CheckUserCodeVerificationValue(ctx, domain.UserID(req.GetUserId()), req.GetCode())
 	if err != nil {
 		return nil, err
 	}
+	if ok {
 
-	refreshToken, err := jwt.CreateToken([]byte(s.authSecret), &jwt.UserClaims{
-		RegisteredClaims: jwt2.RegisteredClaims{
-			ExpiresAt: jwt2.NewNumericDate(helperTime.AddMinutes(s.refreshExpMin, true)),
-		},
-		UserID: uint(req.GetUserId()),
-	})
+		accessToken, err := jwt.CreateToken([]byte(s.authSecret), &jwt.UserClaims{
+			RegisteredClaims: jwt2.RegisteredClaims{
+				ExpiresAt: jwt2.NewNumericDate(helperTime.AddMinutes(s.expMin, true)),
+			},
+			UserID: uint(req.GetUserId()),
+		})
+		if err != nil {
+			return nil, err
+		}
 
-	if err != nil {
-		return nil, err
+		refreshToken, err := jwt.CreateToken([]byte(s.authSecret), &jwt.UserClaims{
+			RegisteredClaims: jwt2.RegisteredClaims{
+				ExpiresAt: jwt2.NewNumericDate(helperTime.AddMinutes(s.refreshExpMin, true)),
+			},
+			UserID: uint(req.GetUserId()),
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		response := &SignUpSecondResponseWrapper{
+			RequestTimestamp: time.Now().Unix(), // Get current UNIX timestamp
+			Data: &pb.UserSignUpSecondResponse{
+				AccessToken:  accessToken,
+				RefreshToken: refreshToken,
+			},
+		}
+		return response, nil
+	} else {
+		return nil, nil
 	}
-
-	response := &SignUpSecondResponseWrapper{
-		RequestTimestamp: time.Now().Unix(), // Get current UNIX timestamp
-		Data: &pb.UserSignUpSecondResponse{
-			AccessToken:  accessToken,
-			RefreshToken: refreshToken,
-		},
-	}
-	return response, nil
 
 }
 func (s *UserService) SignIn(ctx context.Context, req *pb.UserSignInRequest) (*SignUpSecondResponseWrapper, error) {
@@ -119,7 +143,10 @@ func (s *UserService) SignIn(ctx context.Context, req *pb.UserSignInRequest) (*S
 	if err != nil {
 		return nil, err
 	}
-
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.GetPassword()))
+	if err != nil {
+		return nil, ErrPasswordNotMatch
+	}
 	accessToken, err := jwt.CreateToken([]byte(s.authSecret), &jwt.UserClaims{
 		RegisteredClaims: jwt2.RegisteredClaims{
 			ExpiresAt: jwt2.NewNumericDate(helperTime.AddMinutes(s.expMin, true)),
@@ -165,7 +192,7 @@ func (s *UserService) GetByID(ctx context.Context, id uint) (*pb.User, error) {
 		Phone:             string(user.Phone),
 		Email:             string(user.Email),
 		PasswordHash:      user.PasswordHash,
-		NationalCode:      user.NationalCode,
+		NationalCode:      string(user.NationalCode),
 		BirthDate:         timestamppb.New(user.BirthDate), // Converts time.Time to protobuf Timestamp
 		City:              user.City,
 		Gender:            user.Gender,
@@ -185,7 +212,7 @@ func (s *UserService) Update(ctx context.Context, user *types.User) error {
 		Phone:             domain.Phone(user.Phone),
 		Email:             domain.Email(user.Email),
 		PasswordHash:      user.PasswordHash,
-		NationalCode:      user.NationalCode,
+		NationalCode:      domain.NationalCode(user.NationalCode),
 		BirthDate:         user.BirthDate,
 		City:              user.City,
 		Gender:            user.Gender,

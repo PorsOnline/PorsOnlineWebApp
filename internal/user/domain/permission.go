@@ -25,7 +25,6 @@ type Permission struct {
 	Group     string
 	Resource  string
 	Scope     string
-	Duration  time.Duration
 	Policy    TypePolicy
 	Users     []User
 }

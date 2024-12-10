@@ -26,9 +26,9 @@ func main() {
 	}
 	logger.Info("Starting the program", nil)
 	appContainer := app.NewMustApp(c)
-	err = http.Run(appContainer, c)
+	err = http.Run(appContainer, c.Server)
 	if err != nil {
-		log.Fatal("can not start the programm")
+		log.Fatal("can not start the programm", err.Error())
 	}
 
 }

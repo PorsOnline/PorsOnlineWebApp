@@ -1,27 +1,31 @@
 package domain
 
 import (
-
-	"github.com/google/uuid"
 	"github.com/porseOnline/pkg/adapters/storage/types"
 )
 
 type Question struct {
-	ID                    uint               `json:"id" validate:"omitempty"`
-	SurveyUUID            uuid.UUID          `json:"surveyUUID" validate:"required"`
-	QuestionText          string             `json:"questionText" validate:"required"`
-	IsDependency          bool               `json:"isDependency" validate:"omitempty"`
-	QuestionType          types.QuestionType `json:"questionType" validate:"required,oneof=ConditionalMultipleChoice MultipleChoice MultipleChoiceWithAnswer Descriptive"`
-	QuestionOptions       []QuestionOption   `json:"questionOptions" validate:"omitempty"`
+	ID              uint               `json:"id" validate:"omitempty"`
+	SurveyID        uint               `json:"surveyUUID" validate:"required"`
+	QuestionText    string             `json:"questionText" validate:"required"`
+	IsDependency    bool               `json:"isDependency" validate:"omitempty"`
+	QuestionType    types.QuestionType `json:"questionType" validate:"required,oneof=ConditionalMultipleChoice MultipleChoice MultipleChoiceWithAnswer Descriptive"`
+	QuestionOptions []QuestionOption   `json:"questionOptions" validate:"omitempty"`
 }
 
 type QuestionOption struct {
 	OptionText     string
 	NextQuestionID *uint
-	IsCorrect	bool
+	IsCorrect      bool
 }
 
-func TypeToDomainMapper(question types.Question, surveyUUID uuid.UUID) *Question {
+type UserQuestionStep struct {
+	// SurveyUUID uuid.UUID    `json:"surveyUUID" validate:"required"`
+	QuestionID uint         `json:"questionID" validate:"required"`
+	Action     types.Action `json:"action" validate:"omitempty,oneof=forward backward"`
+}
+
+func TypeToDomainMapper(question types.Question) *Question {
 	var questions []QuestionOption
 	var isCorrect bool
 	for _, option := range question.Options {
@@ -35,7 +39,7 @@ func TypeToDomainMapper(question types.Question, surveyUUID uuid.UUID) *Question
 
 	return &Question{
 		ID:              question.ID,
-		SurveyUUID:      surveyUUID,
+		SurveyID:        question.SurveyID,
 		QuestionText:    question.QuestionText,
 		IsDependency:    question.IsDependency,
 		QuestionType:    question.QuestionType,
@@ -43,7 +47,7 @@ func TypeToDomainMapper(question types.Question, surveyUUID uuid.UUID) *Question
 	}
 }
 
-func DomainToTypeMapper(question Question, surveyID uint) types.Question {
+func DomainToTypeMapper(question Question) types.Question {
 	var questions []types.QuestionOption
 	var correctAnswer string
 	for _, option := range question.QuestionOptions {
@@ -53,11 +57,19 @@ func DomainToTypeMapper(question Question, surveyID uint) types.Question {
 		questions = append(questions, types.QuestionOption{OptionText: option.OptionText, NextQuestionID: option.NextQuestionID})
 	}
 	return types.Question{
-		SurveyID:      surveyID,
+		SurveyID:      question.SurveyID,
 		QuestionText:  question.QuestionText,
 		IsDependency:  question.IsDependency,
 		QuestionType:  question.QuestionType,
 		Options:       questions,
 		CorrectAnswer: correctAnswer,
+	}
+}
+
+func QuestionStepDomainToType(question UserQuestionStep, surveyID uint) *types.UserQuestionStep {
+	return &types.UserQuestionStep{
+		QuestionID: question.QuestionID,
+		SurveyID:   surveyID,
+		Action:     question.Action,
 	}
 }

@@ -13,6 +13,16 @@ type PermissionService struct {
 	expMin, refreshExpMin uint
 }
 
+// AssignSurveyPermissionsToOwner implements port.PermissionService.
+func (ps *PermissionService) AssignSurveyPermissionsToOwner(ctx context.Context, permissions []domain.Permission, userID uint, surveyID uint) error {
+	panic("unimplemented")
+}
+
+// SeedPermissions implements port.PermissionService.
+func (ps *PermissionService) SeedPermissions(ctx context.Context, permissions []domain.Permission) error {
+	panic("unimplemented")
+}
+
 func NewPermissionService(svc userPort.PermissionService, authSecret string, expMin, refreshExpMin uint) *PermissionService {
 	return &PermissionService{svc: svc, authSecret: authSecret, expMin: expMin, refreshExpMin: refreshExpMin}
 }
@@ -37,10 +47,10 @@ func (ps *PermissionService) DeletePermission(ctx context.Context, permissionID 
 	return ps.svc.DeletePermission(ctx, permissionID)
 }
 
-func (ps *PermissionService) ValidateUserPermission(ctx context.Context, userID domain.UserID, resource, scope, group string) (bool, error) {
-	return ps.svc.ValidateUserPermission(ctx, userID, resource, scope, group)
+func (ps *PermissionService) ValidateUserPermission(ctx context.Context, userID domain.UserID, resource, scope, group string, surveyID string) (bool, error) {
+	return ps.svc.ValidateUserPermission(ctx, userID, resource, scope, group, surveyID)
 }
 
-func (ps *PermissionService) AssignPermissionToUser(ctx context.Context, permissionID domain.PermissionID, userID domain.UserID) error {
-	return ps.svc.AssignPermissionToUser(ctx, permissionID, userID)
+func (ps *PermissionService) AssignPermissionToUser(ctx context.Context, permissionDetails []domain.PermissionDetails) error {
+	return ps.svc.AssignPermissionToUser(ctx, permissionDetails)
 }

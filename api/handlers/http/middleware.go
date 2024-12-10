@@ -6,6 +6,9 @@ import (
 	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/porseOnline/api/service"
+	"github.com/porseOnline/internal/user/domain"
+
 	"github.com/porseOnline/pkg/jwt"
 )
 
@@ -41,4 +44,50 @@ func newAuthMiddleware(secret []byte) fiber.Handler {
 		},
 		AuthScheme: "Bearer",
 	})
+}
+
+func PermissionMiddleware(permissionService *service.PermissionService) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		userID, err := strconv.Atoi(c.Locals("UserID").(string))
+		if err != nil {
+			return fiber.NewError(fiber.StatusUnauthorized, err.Error())
+		}
+		surveyID := c.Params("surveyID")
+		// permissionService, ok := c.Locals("permissionService").(func(ctx context.Context) userPort.PermissionService)
+		// if !ok {
+		// 	return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve permission service")
+		// }
+
+		valid, err := permissionService.ValidateUserPermission(c.UserContext(), domain.UserID(userID), c.Path(), method2ScopeMapper(c.Route().Method), "", surveyID)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		}
+		if !valid {
+			return fiber.NewError(fiber.StatusForbidden, "Permission Denied")
+		}
+		return c.Next()
+	}
+}
+
+func method2ScopeMapper(method string) string {
+	if method == "GET" {
+		return "read"
+	}
+
+	switch method {
+	case "GET":
+		return "read"
+	case "POST":
+		return "create"
+	case "HEAD":
+		return "create"
+	case "DELETE":
+		return "delete"
+	case "PUT":
+		return "update"
+	case "PATCH":
+		return "patch"
+	default:
+		return ""
+	}
 }

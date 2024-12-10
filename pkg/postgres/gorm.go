@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/porseOnline/pkg/adapters/storage/types"
 	"gorm.io/driver/postgres"
@@ -25,20 +26,33 @@ func (o DBConnOptions) PostgresDSN() string {
 
 func NewPsqlGormConnection(opt DBConnOptions) (*gorm.DB, error) {
 	return gorm.Open(postgres.Open(opt.PostgresDSN()), &gorm.Config{
-		Logger: logger.Discard,
+		Logger: logger.Default,
 	})
 }
 func GormMigrations(db *gorm.DB) {
-	db.AutoMigrate(
+
+	err := db.AutoMigrate(
+		&types.Permission{},
+		&types.UserPermission{},
 		&types.Notification{},
 		&types.User{},
 		&types.CodeVerification{},
 		&types.Vote{},
+		&types.Survey{},
+		&types.SurveyCity{},
+		&types.Question{},
+		&types.QuestionOption{},
 	)
+	if err != nil {
+		log.Fatalf("failed to migrate models: %v", err)
+	}
 }
 
 func GormSecretsMigration(db *gorm.DB) {
-	db.AutoMigrate(
+	err := db.AutoMigrate(
 		&types.Secrets{},
 	)
+	if err != nil {
+		log.Fatalf("failed to migrate models: %v", err)
+	}
 }
