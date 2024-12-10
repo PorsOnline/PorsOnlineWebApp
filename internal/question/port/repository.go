@@ -16,4 +16,10 @@ type Repo interface {
 	DeleteQuestionOptions(ctx context.Context, questionID uint, tx *gorm.DB) error
 	CreateQuestionOptions(ctx context.Context, options []types.QuestionOption, questionID uint, tx *gorm.DB) ([]types.QuestionOption, error)
 	GetDB(ctx context.Context) (*gorm.DB)
+	GetCurrentQuestion(ctx context.Context, userQuestionStep types.UserQuestionStep) (*types.UserQuestionStep, error)
+	GetNextQuestionByCondition(ctx context.Context, userQuestionStep types.UserQuestionStep) (*uint, error)
+	GetNextQuestionByOrder(ctx context.Context, userQuestionStep types.UserQuestionStep) (*uint, error)
+	GetPreviousQuestion(ctx context.Context, userQuestionStep types.UserQuestionStep) (*uint, error)
+	GetFirstQuestion(ctx context.Context, surveyID uint) (*types.Question, error)
+	CreateQuestionStep(ctx context.Context, questionStep types.UserQuestionStep) (error)
 }
