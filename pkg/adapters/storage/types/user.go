@@ -3,6 +3,7 @@ package types
 import (
 	"time"
 
+	"github.com/porseOnline/internal/user/domain"
 	"gorm.io/gorm"
 )
 
@@ -19,4 +20,18 @@ type User struct {
 	Gender            bool      `gorm:"column:gender;not null"`
 	SurveyLimitNumber int       `gorm:"column:survey_limit_number;default:100"`
 	Balance           int       `gorm:"column:balance;default:100"`
+	RoleID            *uint
+	Role              *Role `gorm:"foreignkey:RoleID"`
+	UserPermissions   []UserPermission
+}
+
+type UserPermission struct {
+	gorm.Model
+	UserID       uint
+	User         *User `gorm:"foreignkey:UserID"`
+	PermissionID domain.PermissionID
+	Permission   Permission `gorm:"foreignkey:PermissionID"`
+	SurveyID     *uint
+	Survey       *Survey `gorm:"foreignkey:SurveyID"`
+	Duration     time.Duration
 }

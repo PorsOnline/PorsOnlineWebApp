@@ -13,8 +13,10 @@ import (
 	"github.com/porseOnline/internal/user"
 	"github.com/porseOnline/internal/user/domain"
 	userPort "github.com/porseOnline/internal/user/port"
+	"github.com/porseOnline/pkg/adapters/storage/types"
 	"github.com/porseOnline/pkg/helper"
 	"github.com/porseOnline/pkg/jwt"
+	"github.com/porseOnline/pkg/logger"
 	helperTime "github.com/porseOnline/pkg/time"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -200,4 +202,39 @@ func (s *UserService) GetByID(ctx context.Context, id uint) (*pb.User, error) {
 		UpdatedAt:         timestamppb.New(user.UpdatedAt),
 		Balance:           int32(user.Balance),
 	}, nil
+}
+
+func (s *UserService) Update(ctx context.Context, user *types.User) error {
+	err := s.svc.UpdateUser(ctx, domain.User{
+		ID:                domain.UserID(user.ID),
+		FirstName:         user.FirstName,
+		LastName:          user.LastName,
+		Phone:             domain.Phone(user.Phone),
+		Email:             domain.Email(user.Email),
+		PasswordHash:      user.PasswordHash,
+		NationalCode:      user.NationalCode,
+		BirthDate:         user.BirthDate,
+		City:              user.City,
+		Gender:            user.Gender,
+		SurveyLimitNumber: user.SurveyLimitNumber,
+		CreatedAt:         user.CreatedAt,
+		UpdatedAt:         user.UpdatedAt,
+		Balance:           user.Balance,
+	})
+	if err != nil {
+		logger.Error("update user error", nil)
+		return err
+	}
+	return nil
+}
+
+func (s *UserService) DeleteByID(ctx context.Context, userID int) error {
+	err := s.svc.DeleteByID(ctx, domain.UserID(userID))
+	if err != nil {
+		logger.Error("can not delete user", nil)
+		return err
+	}
+
+	logger.Info("deleted user with id "+strconv.Itoa(int(userID)), nil)
+	return nil
 }

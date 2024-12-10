@@ -22,6 +22,7 @@ type Survey struct {
 	MaxAge               uint
 	Gender               bool
 	TargetCities         []SurveyCity
+	UserID               uint
 }
 
 type GenderEnum int

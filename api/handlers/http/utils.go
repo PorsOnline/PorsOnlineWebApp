@@ -1,7 +1,9 @@
 package http
 
 import (
+
 	"context"
+
 
 	"github.com/porseOnline/pkg/jwt"
 
@@ -19,4 +21,6 @@ func userClaims(ctx *fiber.Ctx) *jwt.UserClaims {
 	return nil
 }
 
+
 type ServiceGetter[T any] func(context.Context) T
+

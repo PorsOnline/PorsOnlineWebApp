@@ -26,16 +26,36 @@ func (o DBConnOptions) PostgresDSN() string {
 
 func NewPsqlGormConnection(opt DBConnOptions) (*gorm.DB, error) {
 	return gorm.Open(postgres.Open(opt.PostgresDSN()), &gorm.Config{
-		Logger: logger.Discard,
+		Logger: logger.Default,
 	})
 }
 func GormMigrations(db *gorm.DB) {
+
+	db.AutoMigrate(
+		&types.Permission{},
+		&types.UserPermission{},
+		&types.Notification{},
+		&types.User{},
+		&types.CodeVerification{},
+		&types.Vote{},
+		&types.Survey{},
+		&types.SurveyCity{},
+		&types.Question{},
+		&types.QuestionOption{},
+	)
+}
+
+func GormSecretsMigration(db *gorm.DB) {
+	db.AutoMigrate(
+		&types.Secrets{},
+
 	err := db.AutoMigrate(
 		&types.Notification{},
 		&types.User{},
 		&types.CodeVerification{},
 		&types.Outbox{},
 		&types.CodeVerificationOutbox{},
+
 	)
 	if err != nil {
 		log.Fatalf("failed to migrate models: %v", err)

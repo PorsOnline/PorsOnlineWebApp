@@ -101,6 +101,8 @@ type User struct {
 	DeletedAt         time.Time
 	UpdatedAt         time.Time
 	Balance           int
+	Role              Role
+	Permissions       []Permission
 }
 
 func (u *User) Validate() error {
@@ -114,4 +116,10 @@ func (u *User) Validate() error {
 		return errors.New("national code is not valid")
 	}
 	return nil
+}
+
+type PermissionDetails struct {
+	PermissionID PermissionID
+	SurveyID     *uint
+	Duration     *time.Duration
 }
