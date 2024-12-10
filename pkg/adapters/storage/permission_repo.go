@@ -91,16 +91,15 @@ func (r *permissionRepo) Assign(ctx context.Context, userPermission types.UserPe
 	if user.ID == 0 {
 		return errors.New("user not found")
 	}
-
-	if user.Role.AccessLevel >= permission.Policy {
+	// if user.Role.AccessLevel >= permission.Policy {
 		//update user permissions
 		if err := r.db.Model(&types.UserPermission{}).Create(&userPermission).Error; err != nil {
 			return err
 		}
 		return nil
-	} else {
-		return errors.New("cannot assign this permission to the user")
-	}
+	// } else {
+	// 	return errors.New("cannot assign this permission to the user")
+	// }
 }
 
 func (r *permissionRepo) GetAll(ctx context.Context, userID domain.UserID) (*[]domain.Permission, error) {
@@ -139,7 +138,7 @@ func (r *permissionRepo) Validate(ctx context.Context, userID domain.UserID, res
 	}
 
 	if userPermissionDetails.ID > 0 {
-		if userPermissionDetails.CreatedAt.Add(userPermissionDetails.Duration).Before(time.Now()) {
+		if userPermissionDetails.Duration == 0 || userPermissionDetails.CreatedAt.Add(userPermissionDetails.Duration).Before(time.Now()) {
 			return true, nil
 		}
 	}
@@ -158,16 +157,17 @@ func (r *permissionRepo) Validate(ctx context.Context, userID domain.UserID, res
 	// }
 }
 
-func (r *permissionRepo) GetByResourceScope(ctx context.Context, resource, scope string) (bool, error) {
+func (r *permissionRepo) GetByResourceScope(ctx context.Context, resource, scope string) (types.Permission, error) {
 	var permission types.Permission
-	err := r.db.Debug().Table("permissions").Where("resource = ? and scope = ?", permission, scope).WithContext(ctx).First(&permission).Error
+	err := r.db.Table("permissions").Where("resource = ? and scope = ?", resource, scope).WithContext(ctx).First(&permission).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil
+			return types.Permission{}, nil
 		}
-		return false, err
+		return types.Permission{}, err
 	}
 
-	return true, nil
+	return permission, nil
 }
+

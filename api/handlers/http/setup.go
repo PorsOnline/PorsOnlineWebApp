@@ -42,13 +42,12 @@ func Run(appContainer app.App, config config.Config) error {
 	questionService := service.NewQuestionService(appContainer.QuestionService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	surveyApi := app.Group("api/v1/survey")
 	surveyApi.Use(newAuthMiddleware([]byte(config.Server.Secret)))
-	surveyApi.Use(PermissionMiddleware(permissionService))
 	surveyApi.Post("", CreateSurvey(surveyService))
-	surveyApi.Get(":surveyID", GetSurvey(surveyService))
-	surveyApi.Put("/:surveyID", UpdateSurvey(surveyService))
-	surveyApi.Post("cancel/:surveyID", CancelSurvey(surveyService))
-	surveyApi.Delete(":surveyID", DeleteSurvey(surveyService))
-	surveyApi.Get("", GetAllSurveys(surveyService))
+	surveyApi.Get(":surveyID", PermissionMiddleware(permissionService),GetSurvey(surveyService))
+	surveyApi.Put(":surveyID", PermissionMiddleware(permissionService),UpdateSurvey(surveyService))
+	surveyApi.Post("cancel/:surveyID", PermissionMiddleware(permissionService),CancelSurvey(surveyService))
+	surveyApi.Delete(":surveyID", PermissionMiddleware(permissionService),DeleteSurvey(surveyService))
+	surveyApi.Get("", PermissionMiddleware(permissionService),GetAllSurveys(surveyService))
 	userService := service.NewUserService(appContainer.UserService(),
 		config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 
@@ -67,6 +66,7 @@ func Run(appContainer app.App, config config.Config) error {
 	surveyApi.Post(":surveyID/question", PermissionMiddleware(permissionService), CreateQuestion(questionService))
 	surveyApi.Delete(":surveyID/question/:id", PermissionMiddleware(permissionService), DeleteQuestion(questionService))
 	surveyApi.Put(":surveyID/question", PermissionMiddleware(permissionService), UpdateQuestion(questionService))
+	surveyApi.Get(":surveyID/question/get-next", PermissionMiddleware(permissionService), UpdateQuestion(questionService))
 
 	roleService := service.NewRoleService(appContainer.RoleService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	roleApi := app.Group("api/v1")

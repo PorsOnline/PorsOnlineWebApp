@@ -36,6 +36,10 @@ func GormMigrations(db *gorm.DB) {
 		&types.User{},
 		&types.CodeVerification{},
 		&types.Vote{},
+		&types.Survey{},
+		&types.SurveyCity{},
+		&types.Question{},
+		&types.QuestionOption{},
 	)
 }
 

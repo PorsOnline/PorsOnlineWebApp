@@ -4,8 +4,6 @@ import (
 	"github.com/porseOnline/internal/survey/domain"
 	surveyPort "github.com/porseOnline/internal/survey/port"
 	"context"
-
-	"github.com/google/uuid"
 )
 
 type SurveyService struct {
@@ -18,26 +16,26 @@ func NewService(srv surveyPort.Service, authSecret string, expMin, refreshExpMin
 	return &SurveyService{srv: srv, authSecret: authSecret, expMin: expMin, refreshExpMin: refreshExpMin}
 }
 
-func (s *SurveyService) CreateSurvey(ctx context.Context, survey *domain.Survey) (*domain.Survey, error) {
+func (s *SurveyService) CreateSurvey(ctx context.Context, survey *domain.Survey, userID uint) (*domain.Survey, error) {
 	//validation
-	return s.srv.CreateSurvey(ctx, *survey)
+	return s.srv.CreateSurvey(ctx, *survey, userID)
 }
 
-func (s *SurveyService) GetSurvey(ctx context.Context, uuid uuid.UUID) (*domain.Survey, error) {
-	return s.srv.GetSurveyByUUID(ctx, uuid)
+func (s *SurveyService) GetSurvey(ctx context.Context, id uint) (*domain.Survey, error) {
+	return s.srv.GetSurveyByID(ctx, id)
 }
 
-func (s *SurveyService) UpdateSurvey(ctx context.Context, survey *domain.Survey) (*domain.Survey, error) {
+func (s *SurveyService) UpdateSurvey(ctx context.Context, survey *domain.Survey, id uint) (*domain.Survey, error) {
 	//validation
-	return s.srv.UpdateSurvey(ctx, *survey)
+	return s.srv.UpdateSurvey(ctx, *survey, id)
 }
 
-func (s *SurveyService) CancelSurvey(ctx context.Context, uuid uuid.UUID) error {
-	return s.srv.CancelSurvey(ctx, uuid)
+func (s *SurveyService) CancelSurvey(ctx context.Context, id uint) error {
+	return s.srv.CancelSurvey(ctx, id)
 }
 
-func (s *SurveyService) DeleteSurvey(ctx context.Context, uuid uuid.UUID) error {
-	return s.srv.DeleteSurvey(ctx, uuid)
+func (s *SurveyService) DeleteSurvey(ctx context.Context, id uint) error {
+	return s.srv.DeleteSurvey(ctx, id)
 }
 
 func (s *SurveyService) GetAllSurveys(ctx context.Context, page, pageSize int) ([]domain.Survey, error) {

@@ -12,7 +12,7 @@ type Repo interface {
 	Update(ctx context.Context, survey types.Survey, cities []string) (*types.Survey, error)
 	GetAll(ctx context.Context, page, pageSize int) ([]types.Survey, error)
 	GetByUUID(ctx context.Context, surveyUUID uuid.UUID) (*types.Survey, error)
-	GetByID(ctx context.Context, surveyUUID uint) (*types.Survey, error)
-	Cancel(ctx context.Context, surveyUUID uuid.UUID) error
-	Delete(ctx context.Context, surveyUUID uuid.UUID) error
+	GetByID(ctx context.Context, id uint) (*types.Survey, error)
+	Cancel(ctx context.Context, id uint) error
+	Delete(ctx context.Context, id uint) error
 }

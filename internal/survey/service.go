@@ -1,10 +1,13 @@
 package survey
 
 import (
-	"github.com/porseOnline/internal/survey/domain"
-	surveyPort "github.com/porseOnline/internal/survey/port"
 	"context"
 	"errors"
+
+	"github.com/porseOnline/internal/survey/domain"
+	surveyPort "github.com/porseOnline/internal/survey/port"
+	permissionDomain "github.com/porseOnline/internal/user/domain"
+	userPort "github.com/porseOnline/internal/user/port"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -12,28 +15,32 @@ import (
 
 type service struct {
 	repo surveyPort.Repo
+	permissionService	userPort.PermissionService
 }
 
-func NewService(repo surveyPort.Repo) surveyPort.Service {
-	return &service{repo: repo}
+func NewService(repo surveyPort.Repo, permissionService userPort.PermissionService) surveyPort.Service {
+	return &service{repo: repo, permissionService: permissionService}
 }
 
-func (ss *service) CreateSurvey(ctx context.Context, survey domain.Survey) (*domain.Survey, error) {
+func (ss *service) CreateSurvey(ctx context.Context, survey domain.Survey, userID uint) (*domain.Survey, error) {
 	newUUID, err := uuid.NewRandom()
 	if err != nil {
 		return nil, err
 	}
 	survey.UUID = newUUID
 	typeSurvey := domain.DomainToTypeMapper(survey)
+	typeSurvey.UserID = userID
 	createdSurvey, err := ss.repo.Create(ctx, typeSurvey, survey.TargetCities)
 	if err != nil {
 		return nil, err
 	}
+	ss.permissionService.AssignSurveyPermissionsToOwner(ctx, surveyPermissions(), userID, createdSurvey.ID)
 	return domain.TypeToDomainMapper(*createdSurvey), nil
 }
 
-func (ss *service) UpdateSurvey(ctx context.Context, survey domain.Survey) (*domain.Survey, error) {
+func (ss *service) UpdateSurvey(ctx context.Context, survey domain.Survey, id uint) (*domain.Survey, error) {
 	typeSurvey := domain.DomainToTypeMapper(survey)
+	typeSurvey.ID = id
 	updatedSurvey, err := ss.repo.Update(ctx, typeSurvey, survey.TargetCities)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -64,12 +71,12 @@ func (ss *service) GetSurveyByUUID(ctx context.Context, surveyUUID uuid.UUID) (*
 	return domain.TypeToDomainMapper(*survey), nil
 }
 
-func (ss *service) CancelSurvey(ctx context.Context, surveyUUID uuid.UUID) error {
-	return ss.repo.Cancel(ctx, surveyUUID)
+func (ss *service) CancelSurvey(ctx context.Context, id uint) error {
+	return ss.repo.Cancel(ctx, id)
 }
 
-func (ss *service) DeleteSurvey(ctx context.Context, surveyUUID uuid.UUID) error {
-	return ss.repo.Delete(ctx, surveyUUID)
+func (ss *service) DeleteSurvey(ctx context.Context, id uint) error {
+	return ss.repo.Delete(ctx, id)
 }
 
 func (ss *service) GetSurveyByID(ctx context.Context, surveyID uint) (*domain.Survey, error) {
@@ -79,3 +86,18 @@ func (ss *service) GetSurveyByID(ctx context.Context, surveyID uint) (*domain.Su
 	}
 	return domain.TypeToDomainMapper(*survey), nil
 }
+
+func surveyPermissions() []permissionDomain.Permission {
+	return []permissionDomain.Permission{
+		{Resource: "/api/v1/survey/:uuid", Scope: "read"},
+		{Resource: "/api/v1/survey", Scope: "update"},
+		{Resource: "/api/v1/survey/cancel/:uuid", Scope: "create"},
+		{Resource: "/api/v1/survey/:uuid", Scope: "delete"},
+		{Resource: "/api/v1/survey", Scope: "read"},
+		{Resource: "/api/v1/survey/:id/question", Scope: "create"},
+		{Resource: "/api/v1/survey/:id/question/:id", Scope: "delete"},
+		{Resource: "/api/v1/survey/:id/question", Scope: "update"},
+		{Resource: "/api/v1/survey/:id/question/get-next", Scope: "read"},
+	}
+}
+
