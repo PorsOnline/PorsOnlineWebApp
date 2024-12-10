@@ -13,6 +13,16 @@ type PermissionService struct {
 	expMin, refreshExpMin uint
 }
 
+// AssignSurveyPermissionsToOwner implements port.PermissionService.
+func (ps *PermissionService) AssignSurveyPermissionsToOwner(ctx context.Context, permissions []domain.Permission, userID uint, surveyID uint) error {
+	panic("unimplemented")
+}
+
+// SeedPermissions implements port.PermissionService.
+func (ps *PermissionService) SeedPermissions(ctx context.Context, permissions []domain.Permission) error {
+	panic("unimplemented")
+}
+
 func NewPermissionService(svc userPort.PermissionService, authSecret string, expMin, refreshExpMin uint) *PermissionService {
 	return &PermissionService{svc: svc, authSecret: authSecret, expMin: expMin, refreshExpMin: refreshExpMin}
 }

@@ -178,7 +178,7 @@ func (a *app) VotingService(ctx context.Context) votingPort.Service {
 	return a.votingServiceWithDB(db, secretDB)
 }
 
-func (a *app) Config() config.Config {
+func (a *app) Config(ctx context.Context) config.Config {
 	return a.cfg
 }
 

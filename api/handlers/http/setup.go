@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/porseOnline/api/service"
 )
 
 func Run(appContainer app.App, config config.ServerConfig) error {
@@ -48,17 +50,18 @@ func Run(appContainer app.App, config config.ServerConfig) error {
 	}))
 
 	api := app.Group("/api/v1")
-	surveyApi := api.Group("/survey")
-	userApi := api.Group("/user")
-	notifApi := api.Group("/notif")
-	votingApi := app.Group("/vote")
-	roleApi := app.Group("/role")
-	permissionApi := app.Group("/permission")
 
-	registerAuthAPI(appContainer, config, userApi, surveyApi, notifApi, votingApi, permissionApi, roleApi)
+	permissionService := service.NewPermissionService(appContainer.PermissionService(context.Background()), config.Secret, config.AuthExpMinute, config.AuthRefreshMinute)
+	registerAPI(appContainer, config, permissionService, api)
 	return app.Listen(fmt.Sprintf(":%d", config.HttpPort))
 }
-func registerAuthAPI(appContainer app.App, cfg config.ServerConfig, userRouter fiber.Router, surveyRouter fiber.Router, notifRouter fiber.Router, votingRouter fiber.Router, permissionRouter fiber.Router, roleRouter fiber.Router) {
+func registerAPI(appContainer app.App, cfg config.ServerConfig, permissionService *service.PermissionService, api fiber.Router) {
+	surveyRouter := api.Group("/survey")
+	userRouter := api.Group("/user")
+	notifRouter := api.Group("/notif")
+	votingRouter := api.Group("/vote")
+	roleRouter := api.Group("/role")
+	permissionRouter := api.Group("/permission")
 	userSvcGetter := userServiceGetter(appContainer, cfg)
 	surveySvcGetter := surveyServiceGetter(appContainer, cfg)
 	notifSvcGetter := notificationServiceGetter(appContainer, cfg)
@@ -72,23 +75,23 @@ func registerAuthAPI(appContainer app.App, cfg config.ServerConfig, userRouter f
 	userRouter.Post("/sign-up-code-verification", SignUpCodeVerification(userSvcGetter))
 	userRouter.Get("/users/:id", GetUserByID(userSvcGetter))
 	userRouter.Put("/user/update", Update(userSvcGetter))
-	userRouter.Delete("/user/:id", PermissionMiddleware(permissionServiceGetter), DeleteByID(userSvcGetter))
+	userRouter.Delete("/user/:id", PermissionMiddleware(permissionService), DeleteByID(userSvcGetter))
 	//notif
 	notifRouter.Post("/send_message", SendMessage(notifSvcGetter))
 	notifRouter.Get("/unread-messages/:user_id", GetUnreadMessages(notifSvcGetter))
 	//survey
 	surveyRouter.Use(newAuthMiddleware([]byte(cfg.Secret)))
 	surveyRouter.Post("", CreateSurvey(surveySvcGetter))
-	surveyRouter.Post(":surveyID/question", PermissionMiddleware(permissionServiceGetter), CreateQuestion(questionSvcGetter))
-	surveyRouter.Delete(":surveyID/question/:id", PermissionMiddleware(permissionServiceGetter), DeleteQuestion(questionSvcGetter))
-	surveyRouter.Put(":surveyID/question", PermissionMiddleware(permissionServiceGetter), UpdateQuestion(questionSvcGetter))
-	surveyRouter.Get(":surveyID/question/get-next", PermissionMiddleware(permissionServiceGetter), UpdateQuestion(questionSvcGetter))
+	surveyRouter.Post(":surveyID/question", PermissionMiddleware(permissionService), CreateQuestion(questionSvcGetter))
+	surveyRouter.Delete(":surveyID/question/:id", PermissionMiddleware(permissionService), DeleteQuestion(questionSvcGetter))
+	surveyRouter.Put(":surveyID/question", PermissionMiddleware(permissionService), UpdateQuestion(questionSvcGetter))
+	surveyRouter.Get(":surveyID/question/get-next", PermissionMiddleware(permissionService), UpdateQuestion(questionSvcGetter))
 	surveyRouter.Post("", CreateSurvey(surveySvcGetter))
-	surveyRouter.Get(":surveyID", PermissionMiddleware(permissionServiceGetter), GetSurvey(surveySvcGetter))
-	surveyRouter.Put(":surveyID", PermissionMiddleware(permissionServiceGetter), UpdateSurvey(surveySvcGetter))
-	surveyRouter.Post("cancel/:surveyID", PermissionMiddleware(permissionServiceGetter), CancelSurvey(surveySvcGetter))
-	surveyRouter.Delete(":surveyID", PermissionMiddleware(permissionServiceGetter), DeleteSurvey(surveySvcGetter))
-	surveyRouter.Get("", PermissionMiddleware(permissionServiceGetter), GetAllSurveys(surveySvcGetter))
+	surveyRouter.Get(":surveyID", PermissionMiddleware(permissionService), GetSurvey(surveySvcGetter))
+	surveyRouter.Put(":surveyID", PermissionMiddleware(permissionService), UpdateSurvey(surveySvcGetter))
+	surveyRouter.Post("cancel/:surveyID", PermissionMiddleware(permissionService), CancelSurvey(surveySvcGetter))
+	surveyRouter.Delete(":surveyID", PermissionMiddleware(permissionService), DeleteSurvey(surveySvcGetter))
+	surveyRouter.Get("", PermissionMiddleware(permissionService), GetAllSurveys(surveySvcGetter))
 	//role
 	roleRouter.Post("", CreateRole(roleSvcGetter))
 	roleRouter.Get(":id", GetRole(roleSvcGetter))
