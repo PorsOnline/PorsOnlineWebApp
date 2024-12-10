@@ -11,8 +11,9 @@ import (
 	"github.com/gofiber/fiber/v2/log"
 )
 
-func SendMessage(srv *service.NotificationService) fiber.Handler {
+func SendMessage(svcGetter ServiceGetter[*service.NotificationService]) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		srv := svcGetter(c.UserContext())
 		var req types.Notification
 		if err := c.BodyParser(&req); err != nil {
 			return fiber.ErrBadRequest
@@ -31,8 +32,9 @@ func SendMessage(srv *service.NotificationService) fiber.Handler {
 
 }
 
-func GetUnreadMessages(srv *service.NotificationService) fiber.Handler {
+func GetUnreadMessages(svcGetter ServiceGetter[*service.NotificationService]) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		srv := svcGetter(c.UserContext())
 		userID := c.Params("user_id")
 		resp, err := srv.GetUnreadMessages(c.UserContext(), userID)
 		if err != nil {

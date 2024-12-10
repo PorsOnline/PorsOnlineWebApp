@@ -10,9 +10,13 @@ import (
 	surveyPort "github.com/porseOnline/internal/survey/port"
 	"github.com/porseOnline/internal/user/domain"
 	"github.com/porseOnline/internal/user/port"
+
 	"github.com/porseOnline/pkg/adapters/storage/mapper"
 	"github.com/porseOnline/pkg/adapters/storage/types"
 	"github.com/porseOnline/pkg/logger"
+
+	"golang.org/x/crypto/bcrypt"
+
 )
 
 var (
@@ -35,7 +39,12 @@ func (s *service) CreateUser(ctx context.Context, user domain.User) (domain.User
 	if err := user.Validate(); err != nil {
 		return 0, fmt.Errorf("%w %w", ErrUserCreationValidation, err)
 	}
-
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.PasswordHash), bcrypt.DefaultCost)
+	if err != nil {
+		log.Println("Error while hashing password : ", err.Error())
+		return 0, ErrUserOnCreate
+	}
+	user.PasswordHash = string(hashedPassword)
 	userID, err := s.repo.Create(ctx, user)
 	if err != nil {
 		log.Println("error on creating new user : ", err.Error())
@@ -68,6 +77,7 @@ func (s *service) GetUserByEmail(ctx context.Context, email domain.Email) (*doma
 
 	return user, nil
 }
+
 
 func (s *service) UpdateUser(ctx context.Context, user domain.User) error {
 	err := s.repo.UpdateUser(ctx, user)
@@ -285,4 +295,16 @@ func (ps *permissionService) AssignSurveyPermissionsToOwner(ctx context.Context,
 		ps.repo.Assign(ctx, types.UserPermission{PermissionID: domain.PermissionID(perm.ID), UserID: userID, SurveyID: &surveyID})
 	}
 	return nil
+
+func (s *service) GetUserByFilter(ctx context.Context, filter *domain.UserFilter) (*domain.User, error) {
+	user, err := s.repo.GetByFilter(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if user == nil {
+		return nil, ErrUserNotFound
+	}
+
+	return user, nil
 }

@@ -5,7 +5,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/porseOnline/api/service"
 	"github.com/porseOnline/app"
 	"github.com/porseOnline/config"
 
@@ -14,7 +13,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 )
 
-func Run(appContainer app.App, config config.Config) error {
+func Run(appContainer app.App, config config.ServerConfig) error {
 	app := fiber.New(fiber.Config{
 		AppName:           "Survey v0.0.1",
 		EnablePrintRoutes: true,
@@ -28,45 +27,75 @@ func Run(appContainer app.App, config config.Config) error {
 		Next: func(c *fiber.Ctx) bool {
 			return c.IP() == "127.0.0.1"
 		},
-		Max:        config.Server.RateLimitMaxAttempt,
-		Expiration: time.Duration(config.Server.RatelimitTimePeriod) * time.Second,
+		Max:        config.RateLimitMaxAttempt,
+		Expiration: time.Duration(config.RatelimitTimePeriod) * time.Second,
 		KeyGenerator: func(c *fiber.Ctx) string {
-			return c.Get("x-forwarded-for")
+			xForwardedFor := c.Get("x-forwarded-for")
+			if xForwardedFor == "" {
+				return c.IP()
+			}
+			return xForwardedFor
 		},
 		LimitReached: func(c *fiber.Ctx) error {
-			return c.SendString("STOP` SENDING TOO MUCH REQUESTS")
+			return c.SendString("STOP SENDING TOO MUCH REQUESTS")
 		},
 	}))
+//<<<<<<< dev
 	permissionService := service.NewPermissionService(appContainer.PermissionService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	surveyService := service.NewService(appContainer.SurveyService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	questionService := service.NewQuestionService(appContainer.QuestionService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	surveyApi := app.Group("api/v1/survey")
+
+
+
+
+	
+
+	//surveyService := service.NewService(appContainer.SurveyService(), config.Secret, config.AuthExpMinute, config.AuthRefreshMinute)
+
+	// userService := service.NewUserService(appContainer.UserService(),
+	// 	config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
+	// notifService := service.NewNotificationSerivce(appContainer.NotifService(), config.Secret, config.AuthExpMinute, config.AuthRefreshMinute)
+	// api := app.Group("/api/v1/")
+
+	api := app.Group("/api/v1")
+	surveyApi := api.Group("/survey")
+	userApi := api.Group("/user")
+	notifApi := api.Group("/notif")
+//>>>>>>> feat/validation-code-and-its-time
+
+	registerAuthAPI(appContainer, config, userApi, surveyApi, notifApi)
+	return app.Listen(fmt.Sprintf(":%d", config.HttpPort))
+}
+func registerAuthAPI(appContainer app.App, cfg config.ServerConfig, userRouter fiber.Router, surveyRouter fiber.Router, notifRouter fiber.Router) {
+	userSvcGetter := userServiceGetter(appContainer, cfg)
+	surveySvcGetter := SurveyServiceGetter(appContainer, cfg)
+	notifSvcGetter := NotificationServiceGetter(appContainer, cfg)
+	//user
+	userRouter.Post("/sign-up", SignUp(userSvcGetter))
+	userRouter.Post("/sign-in", SignIn(userSvcGetter))
+	userRouter.Post("/sign-up-code-verification", SignUpCodeVerification(userSvcGetter))
+	userRouter.Get("/users/:id", GetUserByID(userSvcGetter))
+	userRouter.Put("/user/update", Update(userService))
+	userRouter.Delete("/user/:id", PermissionMiddleware(permissionService), DeleteByID(userService))
+	//notif
+	notifRouter.Post("/send_message", SendMessage(notifSvcGetter))
+	notifRouter.Get("/unread-messages/:user_id", GetUnreadMessages(notifSvcGetter))
+	//survey
+//<<<<<<< dev
+
+
 	surveyApi.Use(newAuthMiddleware([]byte(config.Server.Secret)))
+	surveyApi.Post(":surveyID/question", PermissionMiddleware(permissionService), CreateQuestion(questionService))
+	surveyApi.Delete(":surveyID/question/:id", PermissionMiddleware(permissionService), DeleteQuestion(questionService))
+	surveyApi.Put(":surveyID/question", PermissionMiddleware(permissionService), UpdateQuestion(questionService))
+	surveyApi.Get(":surveyID/question/get-next", PermissionMiddleware(permissionService), UpdateQuestion(questionService))
 	surveyApi.Post("", CreateSurvey(surveyService))
 	surveyApi.Get(":surveyID", PermissionMiddleware(permissionService),GetSurvey(surveyService))
 	surveyApi.Put(":surveyID", PermissionMiddleware(permissionService),UpdateSurvey(surveyService))
 	surveyApi.Post("cancel/:surveyID", PermissionMiddleware(permissionService),CancelSurvey(surveyService))
 	surveyApi.Delete(":surveyID", PermissionMiddleware(permissionService),DeleteSurvey(surveyService))
 	surveyApi.Get("", PermissionMiddleware(permissionService),GetAllSurveys(surveyService))
-	userService := service.NewUserService(appContainer.UserService(),
-		config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
-
-	api := app.Group("/api/v1")
-	api.Post("/sign-up", SignUp(userService))
-	api.Post("/sign-in", SignIn(userService))
-	api.Post("/sign-up-code-verification", SignUpCodeVerification(userService))
-	api.Put("/user/update", Update(userService))
-	api.Delete("/user/:id", PermissionMiddleware(permissionService), DeleteByID(userService))
-
-	api.Get("/users/:id", GetUserByID(userService))
-	notifService := service.NewNotificationSerivce(appContainer.NotifService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
-	api.Post("/send_message", SendMessage(notifService))
-	api.Get("/unread-messages/:user_id", GetUnreadMessages(notifService))
-
-	surveyApi.Post(":surveyID/question", PermissionMiddleware(permissionService), CreateQuestion(questionService))
-	surveyApi.Delete(":surveyID/question/:id", PermissionMiddleware(permissionService), DeleteQuestion(questionService))
-	surveyApi.Put(":surveyID/question", PermissionMiddleware(permissionService), UpdateQuestion(questionService))
-	surveyApi.Get(":surveyID/question/get-next", PermissionMiddleware(permissionService), UpdateQuestion(questionService))
 
 	roleService := service.NewRoleService(appContainer.RoleService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	roleApi := app.Group("api/v1")
@@ -89,4 +118,12 @@ func Run(appContainer app.App, config config.Config) error {
 	votingApi.Post("", Vote(votingService))
 
 	return app.Listen(fmt.Sprintf(":%d", config.Server.HttpPort))
+//=======
+	surveyRouter.Post("", CreateSurvey(surveySvcGetter))
+	surveyRouter.Get(":uuid", GetSurvey(surveySvcGetter))
+	surveyRouter.Put(":uuid", UpdateSurvey(surveySvcGetter))
+	surveyRouter.Post("cancel/:uuid", CancelSurvey(surveySvcGetter))
+	surveyRouter.Delete(":uuid", DeleteSurvey(surveySvcGetter))
+	surveyRouter.Get("", GetAllSurveys(surveySvcGetter))
+//>>>>>>> feat/validation-code-and-its-time
 }
