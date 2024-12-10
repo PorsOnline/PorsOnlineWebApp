@@ -52,7 +52,7 @@ func PermissionMiddleware(permissionService *service.PermissionService) fiber.Ha
 			return fiber.NewError(fiber.StatusUnauthorized, err.Error())
 		}
 		surveyID := c.Params("surveyID")
-		
+
 		valid, err := permissionService.ValidateUserPermission(c.UserContext(), domain.UserID(userID), c.Path(), method2ScopeMapper(c.Route().Method), "", surveyID)
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
