@@ -5,9 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
 
+	surveyPort "github.com/porseOnline/internal/survey/port"
 	"github.com/porseOnline/internal/user/domain"
 	"github.com/porseOnline/internal/user/port"
+	"github.com/porseOnline/pkg/adapters/storage/mapper"
 	"github.com/porseOnline/pkg/logger"
 )
 
@@ -151,11 +154,13 @@ func (rs *roleService) AssignRoleToUser(ctx context.Context, roleID domain.RoleI
 // ----------------- Permission related services
 type permissionService struct {
 	repo port.PermissionRepo
+	surveyService surveyPort.Service
 }
 
-func NewPermissionService(permissionRepo port.PermissionRepo) port.PermissionService {
+func NewPermissionService(permissionRepo port.PermissionRepo, surveyService surveyPort.Service) port.PermissionService {
 	return &permissionService{
 		repo: permissionRepo,
+		surveyService: surveyService,
 	}
 }
 
@@ -203,13 +208,28 @@ func (ps *permissionService) DeletePermission(ctx context.Context, permissionID 
 	return nil
 }
 
-func (ps *permissionService) AssignPermissionToUser(ctx context.Context, permissionID domain.PermissionID, userID domain.UserID) error {
-	err := ps.repo.Assign(ctx, permissionID, userID)
-	if err != nil {
-		logger.Error("error in assigning permission to user", nil)
-		return err
+func (ps *permissionService) AssignPermissionToUser(ctx context.Context, permissionDetails []domain.PermissionDetails) error {
+	for _, permissionDetail := range permissionDetails {
+		permission, err := ps.repo.GetByID(ctx, permissionDetail.PermissionID)
+		if err != nil {
+			return err
+		}
+		if permission.Resource == "survey" {
+			_, err := ps.surveyService.GetSurveyByID(ctx, *permissionDetail.SurveyID)
+			if err != nil {
+				return err
+			}
+		} else {
+			permissionDetail.SurveyID = nil
+		}
+
+		err = ps.repo.Assign(ctx, *mapper.PermissionDetailsDomain2Storage(permissionDetail))
+		if err != nil {
+			logger.Error("error in assigning permission to user", nil)
+			return err
+		}
+		logger.Info("successful assign permission to user", nil)
 	}
-	logger.Info("successful assign permission to user", nil)
 	return nil
 }
 
@@ -223,12 +243,34 @@ func (ps *permissionService) GetUserPermissions(ctx context.Context, userID doma
 	return *permissions, nil
 }
 
-func (ps *permissionService) ValidateUserPermission(ctx context.Context, userID domain.UserID, resource, scope, group string) (bool, error) {
-	valid, err := ps.repo.Validate(ctx, userID, resource, scope, group)
+func (ps *permissionService) ValidateUserPermission(ctx context.Context, userID domain.UserID, resource, scope, group string, surveyID *string) (bool, error) {
+	var surveyIDInt int
+	var err error
+	if surveyID != nil {
+		surveyIDInt, err = strconv.Atoi(*surveyID)
+		if err != nil {
+			return false, errors.New("invalid survey id")
+		}
+	}
+	valid, err := ps.repo.Validate(ctx, userID, resource, scope, group, uint(surveyIDInt))
 	if err != nil {
 		logger.Error("error in validating user access", nil)
 		return valid, err
 	}
 	logger.Info("successful validation on user access", nil)
 	return valid, nil
+}
+
+func (ps *permissionService) SeedPermissions(ctx context.Context, permissions []domain.Permission) error {
+	for _, permission := range permissions {
+		exists, err := ps.repo.GetByResourceScope(ctx, permission.Resource, permission.Scope)
+		if exists {
+			continue
+		}
+		_, err = ps.CreatePermission(ctx, permission)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

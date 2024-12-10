@@ -20,14 +20,13 @@ func PermissionDomain2Storage(permissionDomain domain.Permission) *types.Permiss
 		Resource: permissionDomain.Resource,
 		Scope:    permissionDomain.Scope,
 		Policy:   uint8(permissionDomain.Policy),
-		Duration: permissionDomain.Duration,
 	}
 }
 
 func PermissionStorage2Domain(permission types.Permission) *domain.Permission {
 	var users []domain.User
-	for _, user := range permission.Users {
-		users = append(users, *UserStorage2Domain(user))
+	for _, userPermission := range permission.UserPermissions {
+		users = append(users, *UserStorage2Domain(*userPermission.User))
 	}
 
 	return &domain.Permission{
@@ -39,7 +38,15 @@ func PermissionStorage2Domain(permission types.Permission) *domain.Permission {
 		Resource:  permission.Resource,
 		Scope:     permission.Scope,
 		Policy:    domain.TypePolicy(permission.Policy),
-		Duration:  permission.Duration,
-		Users:     users,
+		// Duration:  permission.Duration,
+		Users: users,
+	}
+}
+
+func PermissionDetailsDomain2Storage(permissionDetailsDomain domain.PermissionDetails) *types.UserPermission {
+	return &types.UserPermission{
+		PermissionID: permissionDetailsDomain.PermissionID,
+		SurveyID:     permissionDetailsDomain.SurveyID,
+		Duration:     *permissionDetailsDomain.Duration,
 	}
 }

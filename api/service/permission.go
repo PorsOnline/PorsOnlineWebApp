@@ -37,10 +37,10 @@ func (ps *PermissionService) DeletePermission(ctx context.Context, permissionID 
 	return ps.svc.DeletePermission(ctx, permissionID)
 }
 
-func (ps *PermissionService) ValidateUserPermission(ctx context.Context, userID domain.UserID, resource, scope, group string) (bool, error) {
-	return ps.svc.ValidateUserPermission(ctx, userID, resource, scope, group)
+func (ps *PermissionService) ValidateUserPermission(ctx context.Context, userID domain.UserID, resource, scope, group string, surveyID *string) (bool, error) {
+	return ps.svc.ValidateUserPermission(ctx, userID, resource, scope, group, surveyID)
 }
 
-func (ps *PermissionService) AssignPermissionToUser(ctx context.Context, permissionID domain.PermissionID, userID domain.UserID) error {
-	return ps.svc.AssignPermissionToUser(ctx, permissionID, userID)
+func (ps *PermissionService) AssignPermissionToUser(ctx context.Context, permissionDetails []domain.PermissionDetails) error {
+	return ps.svc.AssignPermissionToUser(ctx, permissionDetails)
 }

@@ -106,43 +106,14 @@ func DeletePermission(svc *service.PermissionService) fiber.Handler {
 	}
 }
 
-func ValidateUserPermission(svc *service.PermissionService) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		var req UserPermissionValidationRequest
-		if err := c.BodyParser(&req); err != nil {
-			return fiber.ErrBadRequest
-		}
-
-		userId, err := c.ParamsInt("userId")
-		if err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
-		}
-		valid, err := svc.ValidateUserPermission(c.UserContext(), domain.UserID(userId), req.Resource, req.Scope, req.Group)
-		if err != nil {
-			logger.Error("error in validating user permission", nil)
-			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
-		}
-
-		if !valid {
-			logger.Error("user do not have access to this resource", nil)
-			return fiber.NewError(fiber.StatusNotAcceptable, "Forbidden")
-		}
-		logger.Info("validate user permission successfully", nil)
-		return nil
-	}
-}
-
 func AssignPermissionToUser(svc *service.PermissionService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		permissionId, err := c.ParamsInt("permissionId")
-		if err != nil {
+		var req []domain.PermissionDetails
+		if err := c.BodyParser(&req); err != nil {
+			logger.Error("error in parse assign permission body", nil)
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
-		userId, err := c.ParamsInt("userId")
-		if err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
-		}
-		err = svc.AssignPermissionToUser(c.UserContext(), domain.PermissionID(permissionId), domain.UserID(userId))
+		err := svc.AssignPermissionToUser(c.UserContext(), req)
 		if err != nil {
 			logger.Error("error in assining permission to user", nil)
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
