@@ -21,17 +21,16 @@ import (
 )
 
 type app struct {
-	db              *gorm.DB
-	secretsDB       *gorm.DB
-	cfg             config.Config
-	userService     userPort.Service
-	notifService    notifPort.Service
-	surveyService   surveyPort.Service
-	questionService questionPort.Service
-	votingService   votingPort.Service
- 	roleService       userPort.RoleService
+	db                *gorm.DB
+	secretsDB         *gorm.DB
+	cfg               config.Config
+	userService       userPort.Service
+	notifService      notifPort.Service
+	surveyService     surveyPort.Service
+	questionService   questionPort.Service
+	votingService     votingPort.Service
+	roleService       userPort.RoleService
 	permissionService userPort.PermissionService
-
 }
 
 func (a *app) UserService() userPort.Service {
@@ -58,7 +57,7 @@ func (a *app) PermissionService() userPort.PermissionService {
 	return a.permissionService
 }
 
-func (a *app) VotingService() votingPort.Service{
+func (a *app) VotingService() votingPort.Service {
 	return a.votingService
 }
 
@@ -84,12 +83,12 @@ func (a *app) setDB() error {
 	a.db = db
 
 	secretDB, err := postgres.NewPsqlGormConnection(postgres.DBConnOptions{
-		User:   a.cfg.DB.User,
-		Pass:   a.cfg.DB.Password,
-		Host:   a.cfg.DB.Host,
-		Port:   a.cfg.DB.Port,
-		DBName: a.cfg.DB.SDatabase,
-		Schema: a.cfg.DB.Schema,
+		User:   a.cfg.SecretDB.User,
+		Pass:   a.cfg.SecretDB.Password,
+		Host:   a.cfg.SecretDB.Host,
+		Port:   a.cfg.SecretDB.Port,
+		DBName: a.cfg.SecretDB.Database,
+		Schema: a.cfg.SecretDB.Schema,
 	})
 	postgres.GormSecretsMigration(secretDB)
 

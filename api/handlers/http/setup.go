@@ -17,7 +17,6 @@ import (
 func Run(appContainer app.App, config config.Config) error {
 	app := fiber.New(fiber.Config{
 		AppName:           "Survey v0.0.1",
-		EnablePrintRoutes: true,
 	})
 
 	app.Use(TraceMiddleware())
@@ -89,5 +88,7 @@ func Run(appContainer app.App, config config.Config) error {
 	votingService := service.NewVotingService(appContainer.VotingService(), config.Server.Secret, config.Server.AuthExpMinute, config.Server.AuthRefreshMinute)
 	votingApi.Post("", Vote(votingService))
 
-	return app.Listen(fmt.Sprintf(":%d", config.Server.HttpPort))
+	certFile := "/app/server.crt"
+	keyFile := "/app/server.key"
+	return app.ListenTLS(fmt.Sprintf(":%d", config.Server.HttpPort), certFile, keyFile)
 }
