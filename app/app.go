@@ -41,7 +41,7 @@ type app struct {
 	votingService     votingPort.Service
 	roleService       userPort.RoleService
 	permissionService userPort.PermissionService
-  codeVrfctnService codeVerificationPort.Service
+	codeVrfctnService codeVerificationPort.Service
 }
 
 // CodeVerificationService implements App.
