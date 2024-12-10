@@ -8,13 +8,6 @@ import (
 )
 
 func UserDomain2Storage(userDomain domain.User) *types.User {
-	var userPermissions []types.Permission
-	if len(userDomain.Permissions) > 0 {
-		for _, permission := range userDomain.Permissions {
-			userPermissions = append(userPermissions, *PermissionDomain2Storage(permission))
-		}
-	}
-
 	var userRole types.Role
 	if userRole.ID > 0 {
 		userRole = *RoleDomain2Storage(userDomain.Role)
@@ -34,7 +27,7 @@ func UserDomain2Storage(userDomain domain.User) *types.User {
 		Phone:             string(userDomain.Phone),
 		Email:             string(userDomain.Email),
 		PasswordHash:      userDomain.PasswordHash,
-		NationalCode:      userDomain.NationalCode,
+		NationalCode:      string(userDomain.NationalCode),
 		BirthDate:         userDomain.BirthDate,
 		City:              userDomain.City,
 		Gender:            userDomain.Gender,
@@ -42,15 +35,14 @@ func UserDomain2Storage(userDomain domain.User) *types.User {
 		Balance:           userDomain.Balance,
 		Role:              &userRole,
 		RoleID:            (*uint)(&userDomain.Role.ID),
-		Permissions:       userPermissions,
 	}
 }
 
 func UserStorage2Domain(user types.User) *domain.User {
 	var userPermissions []domain.Permission
-	if len(user.Permissions) > 0 {
-		for _, permission := range user.Permissions {
-			userPermissions = append(userPermissions, *PermissionStorage2Domain(permission))
+	if len(user.UserPermissions) > 0 {
+		for _, userPermission := range user.UserPermissions {
+			userPermissions = append(userPermissions, *PermissionStorage2Domain(userPermission.Permission))
 		}
 	}
 
@@ -71,7 +63,7 @@ func UserStorage2Domain(user types.User) *domain.User {
 		Phone:             domain.Phone(user.Phone),
 		Email:             domain.Email(user.Email),
 		PasswordHash:      user.PasswordHash,
-		NationalCode:      user.NationalCode,
+		NationalCode:      domain.NationalCode(user.NationalCode),
 		BirthDate:         user.BirthDate,
 		City:              user.City,
 		Gender:            user.Gender,

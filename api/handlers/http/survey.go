@@ -1,21 +1,24 @@
 package http
 
 import (
+	"strconv"
+
 	"github.com/porseOnline/api/service"
 	"github.com/porseOnline/internal/survey/domain"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
 )
 
-
-func CreateSurvey(svc *service.SurveyService) fiber.Handler {
+func CreateSurvey(svcGetter ServiceGetter[*service.SurveyService]) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+
+		svc := svcGetter(c.UserContext())
 		var req domain.Survey
 		if err := c.BodyParser(&req); err != nil {
 			return fiber.ErrBadRequest
 		}
-		response, err := svc.CreateSurvey(c.UserContext(), &req)
+		userID, err := strconv.Atoi(c.Locals("UserID").(string))
+		response, err := svc.CreateSurvey(c.UserContext(), &req, uint(userID))
 		if err != nil {
 			// if errors.Is(err, service.ErrUserCreationValidation) {
 			// 	return fiber.NewError(fiber.StatusBadRequest, err.Error())
@@ -27,14 +30,20 @@ func CreateSurvey(svc *service.SurveyService) fiber.Handler {
 	}
 }
 
-func GetSurvey(svc *service.SurveyService) fiber.Handler {
+func GetSurvey(svcGetter ServiceGetter[*service.SurveyService]) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+
+		var param = c.Params("surveyID")
+		surveyID, err := strconv.Atoi(param)
+
+		svc := svcGetter(c.UserContext())
 		var param = c.Params("uuid")
 		uuid, err := uuid.Parse(param)
+
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
-		resp, err := svc.GetSurvey(c.Context(), uuid)
+		resp, err := svc.GetSurvey(c.Context(), uint(surveyID))
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
@@ -42,10 +51,16 @@ func GetSurvey(svc *service.SurveyService) fiber.Handler {
 	}
 }
 
-func UpdateSurvey(svc *service.SurveyService) fiber.Handler {
+func UpdateSurvey(svcGetter ServiceGetter[*service.SurveyService]) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var param = c.Params("uuid")
+
+		var param = c.Params("surveyID")
+		surveyID, err := strconv.Atoi(param)
+
+		svc := svcGetter(c.UserContext())
+
 		uuid, err := uuid.Parse(param)
+
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
@@ -53,8 +68,7 @@ func UpdateSurvey(svc *service.SurveyService) fiber.Handler {
 		if err := c.BodyParser(&req); err != nil {
 			return fiber.ErrBadRequest
 		}
-		req.UUID = uuid
-		response, err := svc.UpdateSurvey(c.UserContext(), &req)
+		response, err := svc.UpdateSurvey(c.UserContext(), &req, uint(surveyID))
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
@@ -62,14 +76,20 @@ func UpdateSurvey(svc *service.SurveyService) fiber.Handler {
 	}
 }
 
-func CancelSurvey(svc *service.SurveyService) fiber.Handler {
+func CancelSurvey(svcGetter ServiceGetter[*service.SurveyService]) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var param = c.Params("uuid")
+
+		var param = c.Params("surveyID")
+		surveyID, err := strconv.Atoi(param)
+
+		svc := svcGetter(c.UserContext())
+		
 		uuid, err := uuid.Parse(param)
+
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
-		err = svc.CancelSurvey(c.Context(), uuid)
+		err = svc.CancelSurvey(c.Context(),  uint(surveyID))
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
@@ -77,14 +97,20 @@ func CancelSurvey(svc *service.SurveyService) fiber.Handler {
 	}
 }
 
-func DeleteSurvey(svc *service.SurveyService) fiber.Handler {
+func DeleteSurvey(svcGetter ServiceGetter[*service.SurveyService]) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var param = c.Params("uuid")
+
+		var param = c.Params("surveyID")
+		surveyID, err := strconv.Atoi(param)
+
+		svc := svcGetter(c.UserContext())
+		
 		uuid, err := uuid.Parse(param)
+
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
-		err = svc.DeleteSurvey(c.Context(), uuid)
+		err = svc.DeleteSurvey(c.Context(),  uint(surveyID))
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
@@ -93,13 +119,14 @@ func DeleteSurvey(svc *service.SurveyService) fiber.Handler {
 }
 
 type PaginationQuery struct {
-    Page int `query:"page" default:"1" validate:"gt=0"`
-    Size int `query:"size" default:"10" validate:"gt=0"`
-    // SortBy string `query:"sortBy" default:"name" validate:"oneof=id name country"`
+	Page int `query:"page" default:"1" validate:"gt=0"`
+	Size int `query:"size" default:"10" validate:"gt=0"`
+	// SortBy string `query:"sortBy" default:"name" validate:"oneof=id name country"`
 }
 
-func GetAllSurveys(svc *service.SurveyService) fiber.Handler {
+func GetAllSurveys(svcGetter ServiceGetter[*service.SurveyService]) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		svc := svcGetter(c.UserContext())
 		var paginationQuery PaginationQuery
 		err := c.QueryParser(&paginationQuery)
 		if err != nil {

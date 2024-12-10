@@ -10,6 +10,7 @@ type Service interface {
 	CreateUser(ctx context.Context, user domain.User) (domain.UserID, error)
 	GetUserByID(ctx context.Context, userID domain.UserID) (*domain.User, error)
 	GetUserByEmail(ctx context.Context, email domain.Email) (*domain.User, error)
+
 	UpdateUser(ctx context.Context, user domain.User) error
 	DeleteByID(ctx context.Context, userID domain.UserID) error
 }
@@ -28,6 +29,11 @@ type PermissionService interface {
 	GetPermissionByID(ctx context.Context, permissionID domain.PermissionID) (*domain.Permission, error)
 	UpdatePermission(ctx context.Context, permission domain.Permission) error
 	DeletePermission(ctx context.Context, permissionID domain.PermissionID) error
-	ValidateUserPermission(ctx context.Context, userID domain.UserID, resource, scope, group string) (bool, error)
-	AssignPermissionToUser(ctx context.Context, permissionID domain.PermissionID, userID domain.UserID) error
+	ValidateUserPermission(ctx context.Context, userID domain.UserID, resource, scope, group string, surveyID string) (bool, error)
+	AssignPermissionToUser(ctx context.Context,permissionDetails []domain.PermissionDetails) error
+	SeedPermissions(ctx context.Context, permissions []domain.Permission) error 
+	AssignSurveyPermissionsToOwner(ctx context.Context, permissions []domain.Permission, userID uint, surveyID uint) error
+
+	GetUserByFilter(ctx context.Context, filter *domain.UserFilter) (*domain.User, error)
+
 }

@@ -68,9 +68,9 @@ func (r *permissionRepo) Delete(ctx context.Context, permissionID domain.Permiss
 	return r.db.Table("permissions").Where("id = ?", permissionID).Delete(&types.Permission{}).Error
 }
 
-func (r *permissionRepo) Assign(ctx context.Context, permissionID domain.PermissionID, userID domain.UserID) error {
+func (r *permissionRepo) Assign(ctx context.Context, userPermission types.UserPermission) error {
 	var permission types.Permission
-	err := r.db.Debug().Table("permissions").Where("id = ?", permissionID).WithContext(ctx).First(&permission).Error
+	err := r.db.Debug().Table("permissions").Where("id = ?", userPermission.PermissionID).WithContext(ctx).First(&permission).Error
 
 	if err != nil {
 		return err
@@ -82,7 +82,7 @@ func (r *permissionRepo) Assign(ctx context.Context, permissionID domain.Permiss
 
 	// find user function
 	var user types.User
-	err = r.db.Debug().Table("users").Where("id = ?", userID).WithContext(ctx).Preload("Role").First(&user).Error
+	err = r.db.Debug().Table("users").Where("id = ?", userPermission.UserID).WithContext(ctx).Preload("Role").First(&user).Error
 
 	if err != nil {
 		return err
@@ -91,63 +91,83 @@ func (r *permissionRepo) Assign(ctx context.Context, permissionID domain.Permiss
 	if user.ID == 0 {
 		return errors.New("user not found")
 	}
-
-	if user.Role.AccessLevel >= permission.Policy {
+	// if user.Role.AccessLevel >= permission.Policy {
 		//update user permissions
-		tx := r.db.WithContext(ctx).Begin()
-		if tx.Error != nil {
-			logger.Error(tx.Error.Error(), nil)
-			return tx.Error
-		}
-
-		if err := tx.Model(&user).Association("Permissions").Append(&permission); err != nil {
-			logger.Error(err.Error(), nil)
-			tx.Rollback()
+		if err := r.db.Model(&types.UserPermission{}).Create(&userPermission).Error; err != nil {
 			return err
 		}
-
-		return tx.Commit().Error
-	} else {
-		return errors.New("cannot assign this permission to the user")
-	}
+		return nil
+	// } else {
+	// 	return errors.New("cannot assign this permission to the user")
+	// }
 }
 
 func (r *permissionRepo) GetAll(ctx context.Context, userID domain.UserID) (*[]domain.Permission, error) {
 	var user types.User
-	err := r.db.Debug().Table("users").Where("id = ?", userID).WithContext(ctx).Preload("Permissions").First(&user, userID).Error
+	err := r.db.Debug().Table("users").Where("id = ?", userID).WithContext(ctx).Preload("UserPermissions").First(&user, userID).Error
 
 	if err != nil {
 		return nil, err
 	}
 
 	var permissions []domain.Permission
-	for _, permission := range user.Permissions {
-		mappedPermission := mapper.PermissionStorage2Domain(permission)
-		permissions = append(permissions, *mappedPermission)
+	for _, userPermission := range user.UserPermissions {
+		permission, err := r.GetByID(ctx, domain.PermissionID(userPermission.PermissionID))
+		if err != nil {
+			return nil, err
+		}
+		permissions = append(permissions, *permission)
 	}
 	return &permissions, nil
 }
 
-func (r *permissionRepo) Validate(ctx context.Context, userID domain.UserID, resource, scope, group string) (bool, error) {
-	var user types.User
-	err := r.db.Debug().Table("users").Where("id = ?", userID).WithContext(ctx).Preload("Role").Preload("Permissions").First(&user, userID).Error
+func (r *permissionRepo) Validate(ctx context.Context, userID domain.UserID, resource, scope, group string, surveyID uint) (bool, error) {
+	var userPermissionDetails types.UserPermission
+	err := r.db.Table("users u").
+		Joins("left join user_permissions up on u.id = up.user_id").
+		Joins("left join permissions p on p.id = up.permission_id").
+		Select("up.id", "up.duration", "up.created_at").
+		Where("u.id = ? and (? like replace(p.resource, ':id', '%') or ? like replace(p.resource, ':uuid', '%')) and (up.survey_id = ? or up.survey_id is null) and p.scope = ?", userID, resource, resource, surveyID, scope).
+		First(&userPermissionDetails).Error
 
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
 		return false, err
 	}
 
-	valid := false
-	for _, foundPerm := range user.Permissions {
-		if foundPerm.Owner == user.ID {
-			valid = true
-			break
-		} else if user.Role.AccessLevel == 1 && foundPerm.Resource == resource && foundPerm.Scope == scope && foundPerm.Group == group && foundPerm.CreatedAt.Add(foundPerm.Duration).Before(time.Now()) {
-			valid = true
-			break
-		} else if user.Role.AccessLevel > 1 {
-			valid = foundPerm.Policy <= 3
+	if userPermissionDetails.ID > 0 {
+		if userPermissionDetails.Duration == 0 || userPermissionDetails.CreatedAt.Add(userPermissionDetails.Duration).Before(time.Now()) {
+			return true, nil
 		}
 	}
+	return false, nil
 
-	return valid, nil
+	// for _, userPermission := range user.UserPermissions {
+	// 	if userPermission.Permission.Owner == user.ID {
+	// 		valid = true
+	// 		break
+	// 	} else if user.Role.AccessLevel == 1 && userPermission.Permission.Resource == resource && userPermission.Permission.Scope == scope && userPermission.Permission.Group == group && userPermission.CreatedAt.Add(userPermission.Duration).Before(time.Now()) {
+	// 		valid = true
+	// 		break
+	// 	} else if user.Role.AccessLevel > 1 {
+	// 		valid = userPermission.Permission.Policy <= 3
+	// 	}
+	// }
 }
+
+func (r *permissionRepo) GetByResourceScope(ctx context.Context, resource, scope string) (types.Permission, error) {
+	var permission types.Permission
+	err := r.db.Table("permissions").Where("resource = ? and scope = ?", resource, scope).WithContext(ctx).First(&permission).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return types.Permission{}, nil
+		}
+		return types.Permission{}, err
+	}
+
+	return permission, nil
+}
+

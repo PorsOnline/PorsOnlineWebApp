@@ -13,7 +13,7 @@ import (
 )
 
 type questionService struct {
-	questionRepo questionPort.Repo
+	questionRepo  questionPort.Repo
 	surveyService surveyPort.Service
 }
 
@@ -22,18 +22,21 @@ func NewService(repo questionPort.Repo, surveyService surveyPort.Service) questi
 }
 
 func (qs *questionService) CreateQuestion(ctx context.Context, question domain.Question) (domain.Question, error) {
-	survey, err := qs.surveyService.GetSurveyByUUID(ctx, question.SurveyUUID)
+	survey, err := qs.surveyService.GetSurveyByID(ctx, question.SurveyID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return domain.Question{}, errors.New("survey not found")
 		}
 		return domain.Question{}, err
 	}
+	if !survey.IsSequential && question.IsDependency {
+		return domain.Question{}, errors.New("conditional question on random survey is not allowed")
+	}
 	err = qs.validateUserInputsExistence(ctx, question, survey.ID)
 	if err != nil {
 		return domain.Question{}, err
 	}
-	questionType := domain.DomainToTypeMapper(question, survey.ID)
+	questionType := domain.DomainToTypeMapper(question)
 	if !question.IsDependency {
 		order, err := qs.questionRepo.GetNextQuestionOrder(ctx, questionType.SurveyID)
 		if err != nil {
@@ -54,31 +57,38 @@ func (qs *questionService) CreateQuestion(ctx context.Context, question domain.Q
 	}
 	tx.Commit()
 	createdQuestion.Options = options
-	return *domain.TypeToDomainMapper(*createdQuestion, survey.UUID), nil
+	return *domain.TypeToDomainMapper(*createdQuestion), nil
 }
 
-func (qs *questionService) DeleteQuestion(ctx context.Context, id uint) (error) {
-	err := qs.questionRepo.Delete(ctx, id)
+func (qs *questionService) DeleteQuestion(ctx context.Context, id uint, surveyID uint) error {
+	_, err := qs.surveyService.GetSurveyByID(ctx, surveyID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("survey not found")
+		}
+		return err
+	}
+	err = qs.questionRepo.Delete(ctx, id, surveyID)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (qs *questionService) GetQuestion(ctx context.Context, id uint) (*domain.Question, error) {
+func (qs *questionService) GetQuestionByID(ctx context.Context, id uint) (*domain.Question, error) {
 	question, err := qs.questionRepo.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	survey, err := qs.surveyService.GetSurveyByID(ctx, question.ID)
+	_, err = qs.surveyService.GetSurveyByID(ctx, question.SurveyID)
 	if err != nil {
 		return nil, err
 	}
-	return domain.TypeToDomainMapper(*question, survey.UUID), nil
+	return domain.TypeToDomainMapper(*question), nil
 }
 
 func (qs *questionService) UpdateQuestion(ctx context.Context, question domain.Question) (domain.Question, error) {
-	survey, err := qs.surveyService.GetSurveyByUUID(ctx, question.SurveyUUID)
+	survey, err := qs.surveyService.GetSurveyByID(ctx, question.SurveyID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return domain.Question{}, errors.New("survey not found")
@@ -89,7 +99,7 @@ func (qs *questionService) UpdateQuestion(ctx context.Context, question domain.Q
 	if err != nil {
 		return domain.Question{}, err
 	}
-	questionType := domain.DomainToTypeMapper(question, survey.ID)
+	questionType := domain.DomainToTypeMapper(question)
 	tx := qs.questionRepo.GetDB(ctx).Begin()
 	updatedQuestion, err := qs.questionRepo.Update(ctx, questionType, tx)
 	if err != nil {
@@ -108,12 +118,15 @@ func (qs *questionService) UpdateQuestion(ctx context.Context, question domain.Q
 	}
 	tx.Commit()
 	updatedQuestion.Options = options
-	return *domain.TypeToDomainMapper(*updatedQuestion, survey.UUID), nil
+	return *domain.TypeToDomainMapper(*updatedQuestion), nil
 }
 
 func (qs *questionService) validateUserInputsExistence(ctx context.Context, question domain.Question, surveyID uint) error {
 	if question.QuestionType == types.ConditionalMultipleChoice {
 		for _, option := range question.QuestionOptions {
+			if option.NextQuestionID == nil {
+				return errors.New(fmt.Sprintf("next question id should be chosen for option %v", option.OptionText))
+			}
 			nextQuestionID, err := qs.questionRepo.Get(ctx, *option.NextQuestionID)
 			if err != nil {
 				if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -127,4 +140,64 @@ func (qs *questionService) validateUserInputsExistence(ctx context.Context, ques
 		}
 	}
 	return nil
+}
+
+func (qs questionService) GetNextQuestion(ctx context.Context, userQuestionStep domain.UserQuestionStep, userID uint, surveyID uint) (*domain.Question, error) {
+	survey, err := qs.surveyService.GetSurveyByID(ctx, surveyID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &domain.Question{}, errors.New("survey not found")
+		}
+		return &domain.Question{}, err
+	}
+	questionStep := domain.QuestionStepDomainToType(userQuestionStep, survey.ID)
+	questionStep.UserID = userID
+	currentStep, err := qs.questionRepo.GetCurrentQuestion(ctx, *questionStep)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		question, err := qs.questionRepo.GetFirstQuestion(ctx, survey.ID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return &domain.Question{}, errors.New("no question found for the survey")
+			}
+			return &domain.Question{}, err
+		}
+		err = qs.questionRepo.CreateQuestionStep(ctx, types.UserQuestionStep{SurveyID: survey.ID, QuestionID: question.ID, UserID: uint(userID)})
+		if err != nil {
+			return &domain.Question{}, err
+		}
+		return domain.TypeToDomainMapper(*question), nil
+	} else if err != nil {
+		return &domain.Question{}, err
+	}
+	if questionStep.Action == types.Forward {
+		nextQuestionID, err := qs.questionRepo.GetNextQuestionByCondition(ctx, *currentStep)
+		if err != nil {
+			return &domain.Question{}, err
+		}
+		if nextQuestionID == nil {
+			nextQuestionID, err = qs.questionRepo.GetNextQuestionByOrder(ctx, *currentStep)
+			if err != nil {
+				return &domain.Question{}, err
+			}
+		}
+
+		question, err := qs.questionRepo.Get(ctx, *nextQuestionID)
+		err = qs.questionRepo.CreateQuestionStep(ctx, types.UserQuestionStep{SurveyID: survey.ID, QuestionID: question.ID, UserID: uint(userID), Action: questionStep.Action})
+		if err != nil {
+			return &domain.Question{}, err
+		}
+		return domain.TypeToDomainMapper(*question), nil
+
+	}
+	previousQuestionID, err := qs.questionRepo.GetPreviousQuestion(ctx, *currentStep)
+	if err != nil {
+		return &domain.Question{}, err
+	}
+	question, err := qs.questionRepo.Get(ctx, *previousQuestionID)
+	err = qs.questionRepo.CreateQuestionStep(ctx, types.UserQuestionStep{SurveyID: survey.ID, QuestionID: question.ID, UserID: uint(userID), Action: questionStep.Action})
+	if err != nil {
+		return &domain.Question{}, err
+	}
+	return domain.TypeToDomainMapper(*question), nil
+
 }
