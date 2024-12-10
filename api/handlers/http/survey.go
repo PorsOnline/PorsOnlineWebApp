@@ -37,8 +37,6 @@ func GetSurvey(svcGetter ServiceGetter[*service.SurveyService]) fiber.Handler {
 		surveyID, err := strconv.Atoi(param)
 
 		svc := svcGetter(c.UserContext())
-		var param = c.Params("uuid")
-		uuid, err := uuid.Parse(param)
 
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
@@ -58,8 +56,6 @@ func UpdateSurvey(svcGetter ServiceGetter[*service.SurveyService]) fiber.Handler
 		surveyID, err := strconv.Atoi(param)
 
 		svc := svcGetter(c.UserContext())
-
-		uuid, err := uuid.Parse(param)
 
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
@@ -83,13 +79,11 @@ func CancelSurvey(svcGetter ServiceGetter[*service.SurveyService]) fiber.Handler
 		surveyID, err := strconv.Atoi(param)
 
 		svc := svcGetter(c.UserContext())
-		
-		uuid, err := uuid.Parse(param)
 
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
-		err = svc.CancelSurvey(c.Context(),  uint(surveyID))
+		err = svc.CancelSurvey(c.Context(), uint(surveyID))
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
@@ -104,13 +98,11 @@ func DeleteSurvey(svcGetter ServiceGetter[*service.SurveyService]) fiber.Handler
 		surveyID, err := strconv.Atoi(param)
 
 		svc := svcGetter(c.UserContext())
-		
-		uuid, err := uuid.Parse(param)
 
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
-		err = svc.DeleteSurvey(c.Context(),  uint(surveyID))
+		err = svc.DeleteSurvey(c.Context(), uint(surveyID))
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}

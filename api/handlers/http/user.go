@@ -88,8 +88,9 @@ func GetUserByID(svcGetter ServiceGetter[*service.UserService]) fiber.Handler {
 	}
 }
 
-func Update(svc *service.UserService) fiber.Handler {
+func Update(svcGetter ServiceGetter[*service.UserService]) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		svc := svcGetter(c.UserContext())
 		var req types.User
 		if err := c.BodyParser(&req); err != nil {
 			return fiber.ErrBadRequest
@@ -103,8 +104,9 @@ func Update(svc *service.UserService) fiber.Handler {
 	}
 }
 
-func DeleteByID(svc *service.UserService) fiber.Handler {
+func DeleteByID(svcGetter ServiceGetter[*service.UserService]) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		svc := svcGetter(c.UserContext())
 		id, err := c.ParamsInt("id")
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())

@@ -11,8 +11,9 @@ import (
 	"github.com/porseOnline/pkg/logger"
 )
 
-func CreateRole(svc *service.RoleService) fiber.Handler {
+func CreateRole(svcGetter ServiceGetter[*service.RoleService]) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		svc := svcGetter(c.UserContext())
 		var req types.Role
 		if err := c.BodyParser(&req); err != nil {
 			return fiber.ErrBadRequest
@@ -28,8 +29,9 @@ func CreateRole(svc *service.RoleService) fiber.Handler {
 	}
 }
 
-func GetRole(svc *service.RoleService) fiber.Handler {
+func GetRole(svcGetter ServiceGetter[*service.RoleService]) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		svc := svcGetter(c.UserContext())
 		id, err := c.ParamsInt("id")
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
@@ -48,8 +50,9 @@ func GetRole(svc *service.RoleService) fiber.Handler {
 	}
 }
 
-func UpdateRole(svc *service.RoleService) fiber.Handler {
+func UpdateRole(svcGetter ServiceGetter[*service.RoleService]) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		svc := svcGetter(c.UserContext())
 		var req types.Role
 		if err := c.BodyParser(&req); err != nil {
 			return fiber.ErrBadRequest
@@ -64,8 +67,9 @@ func UpdateRole(svc *service.RoleService) fiber.Handler {
 	}
 }
 
-func DeleteRole(svc *service.RoleService) fiber.Handler {
+func DeleteRole(svcGetter ServiceGetter[*service.RoleService]) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		svc := svcGetter(c.UserContext())
 		id, err := c.ParamsInt("id")
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
@@ -80,8 +84,9 @@ func DeleteRole(svc *service.RoleService) fiber.Handler {
 	}
 }
 
-func AssignRoleToUser(svc *service.RoleService) fiber.Handler {
+func AssignRoleToUser(svcGetter ServiceGetter[*service.RoleService]) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		svc := svcGetter(c.UserContext())
 		roleId, err := c.ParamsInt("roleId")
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())

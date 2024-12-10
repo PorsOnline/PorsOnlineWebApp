@@ -212,7 +212,7 @@ func (s *UserService) Update(ctx context.Context, user *types.User) error {
 		Phone:             domain.Phone(user.Phone),
 		Email:             domain.Email(user.Email),
 		PasswordHash:      user.PasswordHash,
-		NationalCode:      user.NationalCode,
+		NationalCode:      domain.NationalCode(user.NationalCode),
 		BirthDate:         user.BirthDate,
 		City:              user.City,
 		Gender:            user.Gender,

@@ -11,8 +11,9 @@ import (
 	"github.com/porseOnline/internal/question/domain"
 )
 
-func CreateQuestion(svc *service.QuestionService) fiber.Handler {
+func CreateQuestion(svcGetter ServiceGetter[*service.QuestionService]) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		svc := svcGetter(c.UserContext())
 		var req domain.Question
 		if err := c.BodyParser(&req); err != nil {
 			return fiber.ErrBadRequest
@@ -39,8 +40,9 @@ func CreateQuestion(svc *service.QuestionService) fiber.Handler {
 	}
 }
 
-func UpdateQuestion(svc *service.QuestionService) fiber.Handler {
+func UpdateQuestion(svcGetter ServiceGetter[*service.QuestionService]) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		svc := svcGetter(c.UserContext())
 		var req domain.Question
 		if err := c.BodyParser(&req); err != nil {
 			return fiber.ErrBadRequest
@@ -67,8 +69,9 @@ func UpdateQuestion(svc *service.QuestionService) fiber.Handler {
 	}
 }
 
-func DeleteQuestion(svc *service.QuestionService) fiber.Handler {
+func DeleteQuestion(svcGetter ServiceGetter[*service.QuestionService]) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		svc := svcGetter(c.UserContext())
 		param := c.Params("id")
 		surveyParam := c.Params("surveyID")
 		id, err := strconv.Atoi(param)
@@ -84,8 +87,9 @@ func DeleteQuestion(svc *service.QuestionService) fiber.Handler {
 	}
 }
 
-func GetNextQuestion(svc *service.QuestionService) fiber.Handler {
+func GetNextQuestion(svcGetter ServiceGetter[*service.QuestionService]) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		svc := svcGetter(c.UserContext())
 		var req domain.UserQuestionStep
 		surveyParam := c.Params("surveyID")
 		surveyID, err := strconv.Atoi(surveyParam)

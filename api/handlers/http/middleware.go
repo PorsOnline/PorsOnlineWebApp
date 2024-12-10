@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/porseOnline/api/service"
 	"github.com/porseOnline/internal/user/domain"
+
 	"github.com/porseOnline/pkg/jwt"
 )
 
@@ -52,7 +53,11 @@ func PermissionMiddleware(permissionService *service.PermissionService) fiber.Ha
 			return fiber.NewError(fiber.StatusUnauthorized, err.Error())
 		}
 		surveyID := c.Params("surveyID")
-		
+		// permissionService, ok := c.Locals("permissionService").(func(ctx context.Context) userPort.PermissionService)
+		// if !ok {
+		// 	return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve permission service")
+		// }
+
 		valid, err := permissionService.ValidateUserPermission(c.UserContext(), domain.UserID(userID), c.Path(), method2ScopeMapper(c.Route().Method), "", surveyID)
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())

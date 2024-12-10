@@ -8,6 +8,14 @@
         "password": "12345",
         "schema":"public"
     },
+    "secretDB": {
+      "host": "secretdb",
+      "port": 5432,
+      "database": "secrets",
+      "schema": "public",
+      "user": "admin",
+      "password": "12345"
+    },
     "server":{
         "httpPort":8080,
         "secret":"123456@#@$",
