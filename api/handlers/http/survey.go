@@ -1,9 +1,11 @@
 package http
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/porseOnline/api/service"
+	"github.com/porseOnline/internal/survey"
 	"github.com/porseOnline/internal/survey/domain"
 
 	"github.com/gofiber/fiber/v2"
@@ -38,6 +40,9 @@ func GetSurvey(svc *service.SurveyService) fiber.Handler {
 		}
 		resp, err := svc.GetSurvey(c.Context(), uint(surveyID))
 		if err != nil {
+			if errors.Is(err, &survey.ErrBadRequest{}) {
+				return fiber.NewError(fiber.StatusBadRequest, err.Error())	
+			}
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
 		return c.JSON(resp)
@@ -57,6 +62,9 @@ func UpdateSurvey(svc *service.SurveyService) fiber.Handler {
 		}
 		response, err := svc.UpdateSurvey(c.UserContext(), &req, uint(surveyID))
 		if err != nil {
+			if errors.Is(err, &survey.ErrBadRequest{}) {
+				return fiber.NewError(fiber.StatusBadRequest, err.Error())	
+			}
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
 		return c.JSON(response)
@@ -72,6 +80,9 @@ func CancelSurvey(svc *service.SurveyService) fiber.Handler {
 		}
 		err = svc.CancelSurvey(c.Context(),  uint(surveyID))
 		if err != nil {
+			if errors.Is(err, &survey.ErrBadRequest{}) {
+				return fiber.NewError(fiber.StatusBadRequest, err.Error())	
+			}
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
 		return c.JSON("successful")
@@ -87,6 +98,9 @@ func DeleteSurvey(svc *service.SurveyService) fiber.Handler {
 		}
 		err = svc.DeleteSurvey(c.Context(),  uint(surveyID))
 		if err != nil {
+			if errors.Is(err, &survey.ErrBadRequest{}) {
+				return fiber.NewError(fiber.StatusBadRequest, err.Error())	
+			}
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
 		return c.JSON("successful")

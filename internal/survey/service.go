@@ -14,8 +14,14 @@ import (
 )
 
 type service struct {
-	repo surveyPort.Repo
-	permissionService	userPort.PermissionService
+	repo              surveyPort.Repo
+	permissionService userPort.PermissionService
+}
+
+type ErrBadRequest struct{}
+
+func (m *ErrBadRequest) Error() string {
+	return "survey not found"
 }
 
 func NewService(repo surveyPort.Repo, permissionService userPort.PermissionService) surveyPort.Service {
@@ -44,7 +50,7 @@ func (ss *service) UpdateSurvey(ctx context.Context, survey domain.Survey, id ui
 	updatedSurvey, err := ss.repo.Update(ctx, typeSurvey, survey.TargetCities)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("survey not found")
+			return nil, &ErrBadRequest{}
 		}
 		return nil, err
 	}
@@ -66,22 +72,40 @@ func (ss *service) GetAllSurveys(ctx context.Context, page, pageSize int) ([]dom
 func (ss *service) GetSurveyByUUID(ctx context.Context, surveyUUID uuid.UUID) (*domain.Survey, error) {
 	survey, err := ss.repo.GetByUUID(ctx, surveyUUID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, &ErrBadRequest{}
+		}
 		return nil, err
 	}
 	return domain.TypeToDomainMapper(*survey), nil
 }
 
 func (ss *service) CancelSurvey(ctx context.Context, id uint) error {
-	return ss.repo.Cancel(ctx, id)
+	err := ss.repo.Cancel(ctx, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &ErrBadRequest{}
+		}
+	}
+	return nil
 }
 
 func (ss *service) DeleteSurvey(ctx context.Context, id uint) error {
-	return ss.repo.Delete(ctx, id)
+	err := ss.repo.Delete(ctx, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &ErrBadRequest{}
+		}
+	}
+	return nil
 }
 
 func (ss *service) GetSurveyByID(ctx context.Context, surveyID uint) (*domain.Survey, error) {
 	survey, err := ss.repo.GetByID(ctx, surveyID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, &ErrBadRequest{}
+		}
 		return nil, err
 	}
 	return domain.TypeToDomainMapper(*survey), nil
@@ -100,4 +124,3 @@ func surveyPermissions() []permissionDomain.Permission {
 		{Resource: "/api/v1/survey/:id/question/get-next", Scope: "read"},
 	}
 }
-
