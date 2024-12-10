@@ -81,7 +81,6 @@ func (s *Service) Handle(ctx context.Context, outboxes []domain.CodeVerification
 
 	for _, outbox := range outboxes {
 		// fmt.Printf("dest : %s, content : %s\n", outbox.Data.Dest, outbox.Data.Content)
-		print(outbox.Data.Content)
 		go helper.SendEmail(outbox.Data.Dest, outbox.Data.Content)
 
 	}
@@ -106,6 +105,5 @@ func (s *Service) CheckUserCodeVerificationValue(ctx context.Context, userID use
 	if err != nil {
 		return false, err
 	}
-	fmt.Printf(" expected %s == val %s", expected, val)
 	return expected == val, nil
 }

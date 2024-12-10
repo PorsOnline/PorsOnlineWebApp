@@ -74,6 +74,7 @@ func (r *CodeVerificationRepo) GetUserCodeVerificationValue(ctx context.Context,
 		Table("code_verifications").
 		Select("content").         // Get "content" from the table
 		Where(`"to" = ?`, userID). // Use simple column name
+		Where("created_at >= NOW() - INTERVAL '10 minutes'").
 		Scan(&code).Error
 
 	// Check if the error is "record not found"
