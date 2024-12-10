@@ -1,34 +1,33 @@
 {
-    "db": {
-        "host": "postgres",
-        "port": 5432,
-        "database": "PorsOnlineDB",
-        "s_database": "",
-        "user": "admin",
-        "password": "12345",
-        "schema":"public"
-    },
-    "secretDB": {
-      "host": "secretdb",
-      "port": 5432,
-      "database": "secrets",
-      "schema": "public",
-      "user": "admin",
-      "password": "12345"
-    },
-    "server":{
-        "httpPort":8080,
-        "secret":"123456@#@$",
-        "authExpMin":30,
-        "authExpRefreshMin":180,
-        "rate_limit_max_attempt": 10,
-        "ratelimit_time_period": 30
-    },
-    "logger": {
-        "level": "INFO",
-        "output": "console",
-        "path": ""
-    },
+  "db": {
+    "host": "postgres",
+    "port": 5432,
+    "database": "PorsOnlineDB",
+    "schema": "public",
+    "user": "admin",
+    "password": "12345"
+  },
+  "secretDB": {
+    "host": "secretdb",
+    "port": 5432,
+    "database": "secrets",
+    "schema": "public",
+    "user": "admin",
+    "password": "12345"
+  },
+  "logger": {
+    "level": "INFO",
+    "output": "console",
+    "path": ""
+  },
+  "server": {
+    "httpPort": 8080,
+    "secret": "123456@#@$",
+    "auth_exp_minute": 30,
+    "auth_refresh_minute": 180,
+    "rate_limit_max_attempt": 10,
+    "ratelimit_time_period": 30
+  },
   "elasticsearch": {
     "host": "localhost",
     "port": "9200",

@@ -17,13 +17,13 @@ services:
     image: 'postgres:latest'
     container_name: secretdb
     environment:
-      POSTGRES_DB: secrets
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: ${POSTGRES_SecretDB_NAME}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     networks:
       - survey-network
     ports:
-      - '5433:5432'
+      - '${POSTGRES_SecretDB_PORT}:5432'
 
   online-survey:
     build: .
@@ -41,7 +41,7 @@ services:
       - postgres
       - secretdb
     volumes:
-      - /Users/javad/Movies/Quera/Project2/OnlineSurvey/config.json:/app/config.json
+      - ${CONFIG_PATH}:/app/config.json
 
 networks:
   survey-network:

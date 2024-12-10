@@ -18,7 +18,6 @@ import (
 func Run(appContainer app.App, config config.ServerConfig) error {
 	app := fiber.New(fiber.Config{
 		AppName:           "Survey v0.0.1",
-		EnablePrintRoutes: true,
 	})
 	app.Use(func(c *fiber.Ctx) error {
 		permissionService := appContainer.PermissionService
@@ -54,8 +53,8 @@ func Run(appContainer app.App, config config.ServerConfig) error {
 	permissionService := service.NewPermissionService(appContainer.PermissionService(context.Background()), config.Secret, config.AuthExpMinute, config.AuthRefreshMinute)
 	registerAPI(appContainer, config, permissionService, api)
   
-  certFile := "/PorsOnlineWebApp/certs/server.crt"
-	keyFile := "/PorsOnlineWebApp/certs/server.key"
+  	certFile := "/app/server.crt"
+	keyFile := "/app/server.key"
 
 	return app.ListenTLS(fmt.Sprintf(":%d", config.HttpPort), certFile, keyFile)
 }

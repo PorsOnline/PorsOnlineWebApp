@@ -42,6 +42,10 @@ func GormMigrations(db *gorm.DB) {
 		&types.SurveyCity{},
 		&types.Question{},
 		&types.QuestionOption{},
+		&types.Outbox{},
+		&types.CodeVerificationOutbox{},
+		&types.OutboxData{},
+
 	)
 	if err != nil {
 		log.Fatalf("failed to migrate models: %v", err)
