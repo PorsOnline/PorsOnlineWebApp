@@ -7,6 +7,7 @@ import (
 
 	"github.com/porseOnline/internal/question/domain"
 	questionPort "github.com/porseOnline/internal/question/port"
+	surveyService "github.com/porseOnline/internal/survey"
 	surveyPort "github.com/porseOnline/internal/survey/port"
 	"github.com/porseOnline/pkg/adapters/storage/types"
 	"gorm.io/gorm"
@@ -17,6 +18,21 @@ type questionService struct {
 	surveyService surveyPort.Service
 }
 
+type ErrBadRequest struct {
+	questionsID int
+}
+
+func (m *ErrBadRequest) Error() string {
+	return fmt.Sprintf("question %v not found", m.questionsID)
+}
+
+type ErrNoQuestionFound struct {
+}
+
+func (m *ErrNoQuestionFound) Error() string {
+	return "survey does not contain any question"
+}
+
 func NewService(repo questionPort.Repo, surveyService surveyPort.Service) questionPort.Service {
 	return &questionService{questionRepo: repo, surveyService: surveyService}
 }
@@ -25,13 +41,13 @@ func (qs *questionService) CreateQuestion(ctx context.Context, question domain.Q
 	survey, err := qs.surveyService.GetSurveyByID(ctx, question.SurveyID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return domain.Question{}, errors.New("survey not found")
+			return domain.Question{}, &surveyService.ErrBadRequest{}
 		}
 		return domain.Question{}, err
 	}
-	if !survey.IsSequential && question.IsDependency {
-		return domain.Question{}, errors.New("conditional question on random survey is not allowed")
-	}
+	// if !survey.IsSequential && question.IsDependency {
+	// 	return domain.Question{}, errors.New("conditional question on random survey is not allowed")
+	// }
 	err = qs.validateUserInputsExistence(ctx, question, survey.ID)
 	if err != nil {
 		return domain.Question{}, err
@@ -64,7 +80,7 @@ func (qs *questionService) DeleteQuestion(ctx context.Context, id uint, surveyID
 	_, err := qs.surveyService.GetSurveyByID(ctx, surveyID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.New("survey not found")
+			return &surveyService.ErrBadRequest{}
 		}
 		return err
 	}
@@ -91,7 +107,7 @@ func (qs *questionService) UpdateQuestion(ctx context.Context, question domain.Q
 	survey, err := qs.surveyService.GetSurveyByID(ctx, question.SurveyID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return domain.Question{}, errors.New("survey not found")
+			return domain.Question{}, &surveyService.ErrBadRequest{}
 		}
 		return domain.Question{}, err
 	}
@@ -125,12 +141,12 @@ func (qs *questionService) validateUserInputsExistence(ctx context.Context, ques
 	if question.QuestionType == types.ConditionalMultipleChoice {
 		for _, option := range question.QuestionOptions {
 			if option.NextQuestionID == nil {
-				return errors.New(fmt.Sprintf("next question id should be chosen for option %v", option.OptionText))
+				return &ErrBadRequest{questionsID: -1}
 			}
 			nextQuestionID, err := qs.questionRepo.Get(ctx, *option.NextQuestionID)
 			if err != nil {
 				if errors.Is(err, gorm.ErrRecordNotFound) {
-					return errors.New(fmt.Sprintf("next question for %v not found", option.OptionText))
+					return &ErrBadRequest{questionsID: int(*option.NextQuestionID)}
 				}
 				return err
 			}
@@ -146,7 +162,7 @@ func (qs questionService) GetNextQuestion(ctx context.Context, userQuestionStep 
 	survey, err := qs.surveyService.GetSurveyByID(ctx, surveyID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return &domain.Question{}, errors.New("survey not found")
+			return &domain.Question{}, &surveyService.ErrBadRequest{}
 		}
 		return &domain.Question{}, err
 	}
@@ -157,7 +173,7 @@ func (qs questionService) GetNextQuestion(ctx context.Context, userQuestionStep 
 		question, err := qs.questionRepo.GetFirstQuestion(ctx, survey.ID)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return &domain.Question{}, errors.New("no question found for the survey")
+				return &domain.Question{}, &ErrNoQuestionFound{}
 			}
 			return &domain.Question{}, err
 		}

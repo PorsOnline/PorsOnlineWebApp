@@ -8,7 +8,9 @@ import (
 	validator "github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/porseOnline/api/service"
+	"github.com/porseOnline/internal/question"
 	"github.com/porseOnline/internal/question/domain"
+	"github.com/porseOnline/internal/survey"
 )
 
 func CreateQuestion(svc *service.QuestionService) fiber.Handler {
@@ -33,6 +35,9 @@ func CreateQuestion(svc *service.QuestionService) fiber.Handler {
 		}
 		response, err := svc.CreateQuestion(c.UserContext(), &req)
 		if err != nil {
+			if errors.Is(err, &question.ErrBadRequest{}) || errors.Is(err, &question.ErrNoQuestionFound{}){
+				fiber.NewError(fiber.StatusBadRequest, err.Error())
+			}
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
 		return c.JSON(response)
@@ -95,6 +100,9 @@ func GetNextQuestion(svc *service.QuestionService) fiber.Handler {
 		userID, err := strconv.Atoi(c.Locals("UserID").(string))
 		resp, err := svc.GetNextQuestion(c.UserContext(), req, uint(userID), uint(surveyID))
 		if err != nil {
+			if errors.Is(err, &survey.ErrBadRequest{}) {
+				return fiber.NewError(fiber.StatusBadRequest, err.Error())	
+			}
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
 		return c.JSON(resp)
