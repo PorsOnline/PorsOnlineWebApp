@@ -31,7 +31,7 @@ func NewPsqlGormConnection(opt DBConnOptions) (*gorm.DB, error) {
 }
 func GormMigrations(db *gorm.DB) {
 
-	db.AutoMigrate(
+	err := db.AutoMigrate(
 		&types.Permission{},
 		&types.UserPermission{},
 		&types.Notification{},
@@ -43,19 +43,14 @@ func GormMigrations(db *gorm.DB) {
 		&types.Question{},
 		&types.QuestionOption{},
 	)
+	if err != nil {
+		log.Fatalf("failed to migrate models: %v", err)
+	}
 }
 
 func GormSecretsMigration(db *gorm.DB) {
-	db.AutoMigrate(
-		&types.Secrets{},
-
 	err := db.AutoMigrate(
-		&types.Notification{},
-		&types.User{},
-		&types.CodeVerification{},
-		&types.Outbox{},
-		&types.CodeVerificationOutbox{},
-
+		&types.Secrets{},
 	)
 	if err != nil {
 		log.Fatalf("failed to migrate models: %v", err)

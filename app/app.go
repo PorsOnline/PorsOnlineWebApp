@@ -32,21 +32,16 @@ import (
 
 type app struct {
 	db                *gorm.DB
-
 	secretsDB         *gorm.DB
-
-
 	cfg               config.Config
 	userService       userPort.Service
 	notifService      notifPort.Service
 	surveyService     surveyPort.Service
-
 	questionService   questionPort.Service
 	votingService     votingPort.Service
 	roleService       userPort.RoleService
 	permissionService userPort.PermissionService
-
-	codeVrfctnService codeVerificationPort.Service
+  codeVrfctnService codeVerificationPort.Service
 }
 
 // CodeVerificationService implements App.
@@ -98,8 +93,9 @@ func (a *app) SurveyService(ctx context.Context) surveyPort.Service {
 }
 
 func (a *app) surveyServiceWithDB(db *gorm.DB) surveyPort.Service {
-	return survey.NewService(storage.NewSurveyRepo(db))
+	return survey.NewService(storage.NewSurveyRepo(db), a.permissionService)
 }
+
 func (a *app) codeVerificationServiceWithDB(db *gorm.DB) codeVerificationPort.Service {
 	return codeVerification.NewService(
 		a.userService, storage.NewOutboxRepo(db), storage.NewCodeVerificationRepo(db))
@@ -117,23 +113,70 @@ func (a *app) CodeVerificationService(ctx context.Context) codeVerificationPort.
 	return a.codeVerificationServiceWithDB(db)
 }
 
-func (a *app) QuestionService() questionPort.Service {
-	return a.questionService
+func (a *app) QuestionService(ctx context.Context) questionPort.Service {
+	db := appCtx.GetDB(ctx)
+	if db == nil {
+		if a.questionService == nil {
+			a.questionService = a.questionServiceWithDB(a.db)
+		}
+		return a.questionService
+	}
+
+	return a.questionServiceWithDB(db)
 }
 
-func (a *app) RoleService() userPort.RoleService {
-	return a.roleService
+func (a *app) questionServiceWithDB(db *gorm.DB) questionPort.Service {
+	return question.NewService(storage.NewQuestionRepo(db), a.surveyService)
+}
+func (a *app) RoleService(ctx context.Context) userPort.RoleService {
+	db := appCtx.GetDB(ctx)
+	if db == nil {
+		if a.roleService == nil {
+			a.roleService = a.roleServiceWithDB(a.db)
+		}
+		return a.roleService
+	}
+
+	return a.roleServiceWithDB(db)
 }
 
-func (a *app) PermissionService() userPort.PermissionService {
-	return a.permissionService
+func (a *app) roleServiceWithDB(db *gorm.DB) userPort.RoleService {
+	return user.NewRoleService(storage.NewRoleRepo(db))
+}
+func (a *app) PermissionService(ctx context.Context) userPort.PermissionService {
+	db := appCtx.GetDB(ctx)
+	if db == nil {
+		if a.permissionService == nil {
+			a.permissionService = a.permissionServiceWithDB(a.db)
+		}
+		return a.permissionService
+	}
+
+	return a.permissionServiceWithDB(db)
 }
 
-func (a *app) VotingService() votingPort.Service {
-	return a.votingService
+func (a *app) permissionServiceWithDB(db *gorm.DB) userPort.PermissionService {
+	return user.NewPermissionService(storage.NewPermissionRepo(db), a.surveyService)
 }
 
-func (a *app) Config() config.Config {
+func (a *app) votingServiceWithDB(db *gorm.DB, secretDB *gorm.DB) votingPort.Service {
+	return voting.NewVotingService(storage.NewVotingRepo(db, secretDB))
+}
+
+func (a *app) VotingService(ctx context.Context) votingPort.Service {
+	db := appCtx.GetDB(ctx)
+	secretDB := appCtx.GetSecretDB(ctx)
+	if db == nil || secretDB == nil {
+		if a.votingService == nil {
+			a.votingService = a.votingServiceWithDB(a.db, a.secretsDB)
+		}
+		return a.votingService
+	}
+
+	return a.votingServiceWithDB(db, secretDB)
+}
+
+func (a *app) Config(ctx context.Context) config.Config {
 	return a.cfg
 }
 
@@ -156,12 +199,12 @@ func (a *app) setDB() error {
 	a.db = db
 
 	secretDB, err := postgres.NewPsqlGormConnection(postgres.DBConnOptions{
-		User:   a.cfg.DB.User,
-		Pass:   a.cfg.DB.Password,
-		Host:   a.cfg.DB.Host,
-		Port:   a.cfg.DB.Port,
-		DBName: a.cfg.DB.SDatabase,
-		Schema: a.cfg.DB.Schema,
+		User:   a.cfg.SecretDB.User,
+		Pass:   a.cfg.SecretDB.Password,
+		Host:   a.cfg.SecretDB.Host,
+		Port:   a.cfg.SecretDB.Port,
+		DBName: a.cfg.SecretDB.Database,
+		Schema: a.cfg.SecretDB.Schema,
 	})
 
 	postgres.GormSecretsMigration(secretDB)
@@ -185,26 +228,14 @@ func NewApp(cfg config.Config) (App, error) {
 	}
 
 	a.userService = user.NewService(storage.NewUserRepo(a.db))
-
-	a.roleService = user.NewRoleService(storage.NewRoleRepo(a.db))
-
-	a.permissionService = user.NewPermissionService(storage.NewPermissionRepo(a.db), a.surveyService)
-
-	a.notifService = notification.NewService(storage.NewNotifRepo(a.db))
-
-
-	a.surveyService = survey.NewService(storage.NewSurveyRepo(a.db), a.permissionService)
-
-	a.questionService = question.NewService(storage.NewQuestionRepo(a.db), a.surveyService)
-
-	a.votingService = voting.NewVotingService(storage.NewVotingRepo(a.db, a.secretsDB))
-
-	a.permissionService.SeedPermissions(context.Background(), generatePermissions())
-
-	a.surveyService = survey.NewService(storage.NewSurveyRepo(a.db))
 	a.codeVrfctnService = codeVerification.NewService(a.userService, storage.NewOutboxRepo(a.db), storage.NewCodeVerificationRepo(a.db))
-
-
+	a.roleService = user.NewRoleService(storage.NewRoleRepo(a.db))
+	a.permissionService = user.NewPermissionService(storage.NewPermissionRepo(a.db), a.surveyService)
+	a.permissionService.SeedPermissions(context.Background(), generatePermissions())
+	a.questionService = question.NewService(storage.NewQuestionRepo(a.db), a.surveyService)
+	a.surveyService = survey.NewService(storage.NewSurveyRepo(a.db), a.permissionService)
+	a.notifService = notification.NewService(storage.NewNotifRepo(a.db))
+	a.votingService = voting.NewVotingService(storage.NewVotingRepo(a.db, a.secretsDB))
 	return a, a.registerOutboxHandlers()
 }
 
@@ -215,7 +246,6 @@ func NewMustApp(cfg config.Config) App {
 	}
 	return app
 }
-
 
 func generatePermissions() []domain.Permission {
 	permissions := []domain.Permission{
@@ -264,4 +294,3 @@ func (a *app) registerOutboxHandlers() error {
 
 	return nil
 }
-
