@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+option go_package = "github.com/porseOnline/api/pb";
+
+
+message UserSignUpFirstRequest {
+    string firstName = 1 [json_name = "firstName"];
+    string lastName = 2 [json_name = "lastName"];
+    string phone = 3 [json_name = "phone"];
+    string email = 4 [json_name = "email"];
+    string password = 5 [json_name = "password"];
+    string nationalCode = 6 [json_name = "nationalCode"];
+    google.protobuf.Timestamp birthdate = 7 [json_name = "birthDate"];
+    string city = 8 [json_name = "city"];
+    bool gender = 9 [json_name = "gender"];
+
+}
+message UserSignInRequest {
+    string email = 1 [json_name = "email"];
+    string password = 2 [json_name = "password"];
+}
+message UserSignUpSecondRequest {
+    uint64 userId = 2 [json_name = "userId"];
+    string code = 1 [json_name = "code"];
+}
+
+message UserSignUpSecondResponse {
+    string accessToken = 1 [json_name = "accessToken"];
+    string refreshToken = 2 [json_name = "refreshToken"];
+}
+
+message UserSignUpFirstResponse {
+    uint64 userId = 1 [json_name = "userId"];
+}
+
+import "google/protobuf/timestamp.proto";
+message User {
+    uint64 id = 1;
+    string firstName = 2;
+    string lastName = 3;
+    string phone = 4;
+    string email = 5;             
+    string passwordHash = 6;     
+    string nationalCode = 7;      
+    google.protobuf.Timestamp birthDate = 8;        
+    string city = 9;           
+    bool gender = 10;           
+    int32 survey_limit_number = 11;
+    google.protobuf.Timestamp created_at = 12;
+    google.protobuf.Timestamp deleted_at = 13;
+    google.protobuf.Timestamp updated_at = 14;
+    int32 balance = 15;
+}
